@@ -1,0 +1,11 @@
+production env einrichten!!!!
+typescript??
+package files mergen (nicht 2 und in strapi-db ein eigenes)
+alles doppelt oder lieber nicht? gitignore files, readme, dockerignore, gitignore?, unterschiedliche package logs für frontend/backend??
+wie funktioniert docker netzwerk
+was machen damit das vite ding nicht so langsam ist (in wsl benutzen??)
+env & gitignore draußen oder im strapi-db ordner?
+wie frontend/ backend von den ordnern her strukturiert?
+skript um gesamtes projekt auf einmal zu installieren? nicht web & db extra
+
+WSL verstehn!!
