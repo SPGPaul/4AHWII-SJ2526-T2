@@ -1,9 +1,9 @@
 <script setup>
-import AnalysisArea from '@/components/Analysis_area.vue'
+import AnalysisArea from '@/components/Analysis_area.vue';
 </script>
 
 <template>
-	<v-container class="py-8">
+	<v-container class="py-8; color: white;">
 		<v-row>
 			<v-col cols="12">
 				<AnalysisArea />
