@@ -5,13 +5,10 @@
  */
 
 // Plugins
-import vuetify from './vuetify'
-import router from '@/router'
-import VChart from 'vue-echarts'
+import router from "@/router";
+import vuetify from "./vuetify";
+import VChart from "vue-echarts";
 
-export function registerPlugins (app) {
-  app
-    .use(vuetify)
-    .use(router)
-    .component('VChart', VChart)
+export function registerPlugins(app) {
+  app.use(vuetify).use(router).component("VChart", VChart);
 }
