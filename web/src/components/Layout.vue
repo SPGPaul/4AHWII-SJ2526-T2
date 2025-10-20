@@ -1,6 +1,6 @@
 <template>
   <v-toolbar class="bg-white">
-    <v-col cols="12" offset-sm="3" sm="6">
+    <v-col  cols="12" offset-sm="3" sm="6">
       <span class="text-h5 text-primary bg-white align-right">Menu</span>
       <v-menu>
         <template v-slot:activator="{ props }">
@@ -16,6 +16,12 @@
         </v-list>
       </v-menu>
     </v-col>
+
+    <v-row align="center" justify="center">
+      <v-col cols="auto">
+        <v-btn icon="mdi-account" class="text-primary"></v-btn>
+      </v-col>
+    </v-row>
   </v-toolbar>
 
   <v-card>
