@@ -14,7 +14,7 @@ import { useBackgroundColor } from 'vuetify/lib/composables/color.mjs'
 import { collect } from 'echarts/types/src/component/axisPointer/modelHelper.js'
 
 
-function loadBarChartData(){
+function loadChartData(){
     const apiUrl = "https://blessed-egg-5bd7b2fc4f.strapiapp.com/api/articles";
     const token = "30bc7c7dae9e8436df20b65b13e31ae8c5bb8bd3781cf429029038cc46e7bfc3a915ef15b0f3ca510d7693fde5e6a5290412c36af4c97860ae444f35c371c3414fd09fe35a73b7fe5a2ca8e65108c5d61a6167d0c00ee6411f3bc935cc01ea977c72d26818f55f2905f3ac5aaab574e033a2d1ccaeae4ee12631fd5bcc673e0a";
           fetch(apiUrl, {
@@ -39,9 +39,75 @@ function loadBarChartData(){
           console.error("Fehler bei der Fetch-Operation:", error);
         });
 }
-/*
+/*{
+function renderPieChart()
+{
+    const data = loadChartData();
+    const dataTime[] = data.Time;
+    const dataValue[] = data.Value;
+    const category[] = data.Category;
+
+    const displayedTime = dataTime.slice(0,7);
+    const displayedValue = dataValue.slice(0,7);
+    const displayedCategory = category.slice(0,7);
+
+    use([
+        CanvasRenderer,
+        PieChart,
+        TitleComponent,
+        TooltipComponent,
+        GridComponent,
+        UniversalTransition
+    ])
+    const chartRef = ref(null)
+    const series = [
+        {
+            data: displayedValue,
+            type: 'pie',
+            itemStyle: {
+                color: 'blue'
+            },
+        }
+    ]
+    const options = {
+        text:{
+            color: "white"
+        },
+        title: {
+            text: 'Ausgaben'
+        },
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+                type: 'cross'
+            }
+        },
+        grid: {
+            left: '5%',
+            right: '5%',
+            bottom: '5%',
+            containLabel: true
+        },
+        xAxis: {
+            type: 'category',
+            data: displayedTime
+        },
+        yAxis: {
+            type: 'value'
+        },
+        series
+    }
+
+    watch(() => options, (val) => {
+        console.log('Chart options changed:', val)
+    })
+}
+
+
+
+
 function renderBarChart(){
-    const data = loadBarChartData();
+    const data = loadChartData();
     const dataTime[] = data.Time;
     const dataValue[] = data.Value;
     const category[] = data.Category;
