@@ -35,9 +35,30 @@ async function renderPieChart() {
     });
     const category = items.map((it: any) => it?.category ?? 'Unbekannt');
 
-    const displayedTime = dataTime.slice(0, 7);
+    const displayedTimeRaw = dataTime.slice(0, 7);
     const displayedValue = dataValue.slice(0, 7);
     const displayedCategory = category.slice(0, 7);
+
+    // helpers to format dates for axis labels and tooltips
+    const formatDateShort = (iso: any) => {
+        try {
+            const d = new Date(iso)
+            if (isNaN(d.getTime())) return String(iso)
+            return d.toLocaleDateString(undefined, { day: '2-digit', month: 'short' })
+        } catch {
+            return String(iso)
+        }
+    }
+    const formatDateFull = (iso: any) => {
+        try {
+            const d = new Date(iso)
+            if (isNaN(d.getTime())) return String(iso)
+            return d.toLocaleString()
+        } catch {
+            return String(iso)
+        }
+    }
+    const displayedTime = displayedTimeRaw.map(formatDateShort);
 
     use([
         CanvasRenderer,
@@ -50,9 +71,20 @@ async function renderPieChart() {
 
     const chartRef = ref(null);
 
-    const pieData = displayedCategory.map((name, idx) => ({
+    // Aggregate values by category so identical category names are summed
+    const agg: Record<string, number> = {};
+    for (let i = 0; i < displayedCategory.length; i++) {
+        const name = displayedCategory[i] ?? 'Unbekannt';
+        const val = Number(displayedValue[i] ?? 0) || 0;
+        agg[name] = (agg[name] || 0) + val;
+    }
+
+    // palette and pieData built from aggregated map
+    const palette = ['#4e79a7', '#f28e2b', '#e15759', '#76b7b2', '#59a14f', '#b07aa1', '#ff9da7'];
+    const pieData = Object.keys(agg).map((name, idx) => ({
         name,
-        value: displayedValue[idx] ?? 0
+        value: agg[name],
+        itemStyle: { color: palette[idx % palette.length] }
     }));
 
     const series = [
@@ -64,8 +96,7 @@ async function renderPieChart() {
             data: pieData,
             label: {
                 formatter: '{b}: {c} ({d}%)'
-            },
-          
+            }
         }
     ];
 
@@ -83,7 +114,7 @@ async function renderPieChart() {
         legend: {
             orient: 'vertical',
             left: 'left',
-            data: displayedCategory
+            data: pieData.map(d => d.name)
         },
         series
     };
@@ -100,13 +131,39 @@ async function renderPieChart() {
 
 async function renderBarChart(){
     const data = await loadChartData();
-    const dataTime = Array.isArray(data?.date) ? data.date : [];
-    const dataValue = Array.isArray(data?.amount) ? data.amount : [];
-    const category = Array.isArray(data?.category) ? data.category : [];
+    const items = Array.isArray(data?.data) ? data.data : [];
 
-    const displayedTime = dataTime.slice(0,7);
-    const displayedValue = dataValue.slice(0,7);
-    const displayedCategory = category.slice(0,7);
+    const dataTime = items.map((it: any) => it?.date ?? '');
+    const dataValue = items.map((it: any) => {
+        const v = it?.amount;
+        return typeof v === 'number' ? v : (v ? Number(v) : 0);
+    });
+    const category = items.map((it: any) => it?.category ?? 'Unbekannt');
+
+    const displayedTimeRaw = dataTime.slice(0, 7);
+    const displayedValue = dataValue.slice(0, 7);
+    const displayedCategory = category.slice(0, 7);
+
+    // helpers to format dates for axis labels and tooltips
+    const formatDateShort = (iso: any) => {
+        try {
+            const d = new Date(iso)
+            if (isNaN(d.getTime())) return String(iso)
+            return d.toLocaleDateString(undefined, { day: '2-digit', month: 'short' })
+        } catch {
+            return String(iso)
+        }
+    }
+    const formatDateFull = (iso: any) => {
+        try {
+            const d = new Date(iso)
+            if (isNaN(d.getTime())) return String(iso)
+            return d.toLocaleString()
+        } catch {
+            return String(iso)
+        }
+    }
+    const displayedTime = displayedTimeRaw.map(formatDateShort);
 
     use([
         CanvasRenderer,
@@ -121,22 +178,22 @@ async function renderBarChart(){
         {
             data: displayedValue,
             type: 'bar',
-            itemStyle: {
-                color: 'blue'
-            },
         }
     ]
     const options = {
-        text:{
-            color: "white"
-        },
+        color: ['lightblue', 'lightgreen', 'lightcoral', 'lightsalmon', 'lightseagreen', 'lightpink', 'lightgray'],
+        backgroundColor: '#FFFFFF',
         title: {
             text: 'Ausgaben'
         },
         tooltip: {
             trigger: 'axis',
-            axisPointer: {
-                type: 'cross'
+            axisPointer: { type: 'cross' },
+            formatter: (params: any) => {
+                const p = Array.isArray(params) ? params[0] : params
+                const idx = p?.dataIndex ?? 0
+                const dateLabel = formatDateFull(displayedTimeRaw[idx])
+                return `${dateLabel}<br/>${p.seriesName || ''}: ${p.value}`
             }
         },
         grid: {
@@ -147,7 +204,8 @@ async function renderBarChart(){
         },
         xAxis: {
             type: 'category',
-            data: displayedTime
+            data: displayedTime,
+            axisLabel: { rotate: 25 }
         },
         yAxis: {
             type: 'value'
@@ -158,55 +216,7 @@ async function renderBarChart(){
     watch(() => options, (val) => {
         console.log('Chart options changed:', val)
     })
-}
-
-
-use([
-    CanvasRenderer,
-    BarChart,
-    TitleComponent,
-    TooltipComponent,
-    GridComponent,
-    UniversalTransition
-])
-
-const chartRef = ref(null)
-const series = [
-    {
-        data: [120, 200, 150, 80, 70, 110, 130],
-        type: 'bar',
-        itemStyle: {
-            color: 'lightblue'
-        },
-    }
-]
-
-const options = {
-    backgroundColor: '#FFFFFF',
-    title: {
-        text: 'Ausgaben'
-    },
-    tooltip: {
-        trigger: 'axis',
-        axisPointer: {
-            type: 'cross'
-        }
-    },
-    grid: {
-        left: '5%',
-        right: '5%',
-        bottom: '5%',
-        containLabel: true
-    },
-    xAxis: {
-        type: 'category',
-        data: ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag']
-    },
-    yAxis: {
-        type: 'value'
-    },
-    
-    series
+    return { options, chartRef };
 }
 
 // Native ECharts test: initialize with pie chart options on mount
@@ -215,16 +225,48 @@ onMounted(async () => {
     if (!nativeChartDiv.value) return
     try {
         const { options: pieOptions } = await renderPieChart()
-        const chart = echarts.init(nativeChartDiv.value)
-        chart.setOption(pieOptions)
-        console.log('Pie chart initialized')
+        const { options: barOptions } = await renderBarChart()
+
+        const container = nativeChartDiv.value as HTMLElement
+        container.style.display = 'flex'
+        container.style.alignItems = 'stretch'
+        container.innerHTML = ''
+
+        const leftDiv = document.createElement('div')
+        const rightDiv = document.createElement('div')
+
+        leftDiv.style.flex = '1'
+        rightDiv.style.flex = '1'
+        leftDiv.style.height = '100%'
+        rightDiv.style.height = '100%'
+        leftDiv.style.minWidth = '0'
+        rightDiv.style.minWidth = '0'
+        leftDiv.style.padding = '8px'
+        rightDiv.style.padding = '8px'
+
+        container.appendChild(leftDiv)
+        container.appendChild(rightDiv)
+
+        const chartLeft = echarts.init(leftDiv)
+        const chartRight = echarts.init(rightDiv)
+
+        chartLeft.setOption(pieOptions)
+        chartRight.setOption(barOptions)
+
+        const resizeHandler = () => {
+            chartLeft.resize()
+            chartRight.resize()
+        }
+        window.addEventListener('resize', resizeHandler)
+
+        console.log('Both charts initialized side-by-side')
     } catch (err) {
-        console.error('Failed to initialize pie chart:', err)
+        console.error('Failed to initialize charts:', err)
     }
 })
 </script>
 
 <template>
     <h2>Analysis Area Component</h2>
-    <div ref="nativeChartDiv" style="height: 400px; width: 40%; background: #444; margin-top: 16px;">Ausgaben </div>
+    <div ref="nativeChartDiv" style="height: 400px; width: 40%; background: #FFFFFF; margin-top: 16px;">Ausgaben </div>
 </template>
