@@ -4,48 +4,105 @@ import VChart from 'vue-echarts'
 // Register required ECharts renderers / charts / components
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
-import { BarChart } from 'echarts/charts'
+import { BarChart, PieChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, GridComponent } from 'echarts/components'
 import { UniversalTransition } from 'echarts/features'
 import * as echarts from 'echarts/core'
 import { onMounted, ref } from 'vue'
 import { watch } from 'vue'
-import { useBackgroundColor } from 'vuetify/lib/composables/color.mjs'
-import { collect } from 'echarts/types/src/component/axisPointer/modelHelper.js'
+// removed unused imports (cleaner build)
 
 
-function loadChartData(){
-    const apiUrl = "https://blessed-egg-5bd7b2fc4f.strapiapp.com/api/articles";
-    const token = "30bc7c7dae9e8436df20b65b13e31ae8c5bb8bd3781cf429029038cc46e7bfc3a915ef15b0f3ca510d7693fde5e6a5290412c36af4c97860ae444f35c371c3414fd09fe35a73b7fe5a2ca8e65108c5d61a6167d0c00ee6411f3bc935cc01ea977c72d26818f55f2905f3ac5aaab574e033a2d1ccaeae4ee12631fd5bcc673e0a";
-          fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`, 
-          "Content-Type": "application/json", 
-        },
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(
-              "Netzwerkantwort war nicht erfolgreich: " + response.statusText
-            );
-          }
-          return response.json();
-        })
-        .then((data) => {
-          return data;
-        })
-        .catch((error) => {
-          console.error("Fehler bei der Fetch-Operation:", error);
-        });
+async function loadChartData(){
+    const apiUrl = "https://elegant-eggs-b247740f2b.strapiapp.com/api/Receipts";
+    const token = "54a258000325fcbff04e65b292fecd2ca70258552324762fd2520e1932269765803183eb47586c2203f12b3abd7c7dbbe3dffe729c8334508eeba14656a85aa5bb7441ec939788a76a8a7e6066b1973362e5cdb6770a50dbecf0d74a4bcebe7c650eb54f08b757e0770003032e5817aa26dc6664c373e2c2e8667888d2d3f2c1";
+    const res = await fetch(apiUrl, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+    });
+    console.log('Fetch response:', res);
+    if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
+    return await res.json();
 }
-/*{
-function renderPieChart()
-{
-    const data = loadChartData();
-    const dataTime[] = data.Time;
-    const dataValue[] = data.Value;
-    const category[] = data.Category;
+
+async function renderPieChart() {
+    const data = await loadChartData();
+    const items = Array.isArray(data?.data) ? data.data : [];
+
+    const dataTime = items.map((it: any) => it?.date ?? '');
+    const dataValue = items.map((it: any) => {
+        const v = it?.amount;
+        return typeof v === 'number' ? v : (v ? Number(v) : 0);
+    });
+    const category = items.map((it: any) => it?.category ?? 'Unbekannt');
+
+    const displayedTime = dataTime.slice(0, 7);
+    const displayedValue = dataValue.slice(0, 7);
+    const displayedCategory = category.slice(0, 7);
+
+    use([
+        CanvasRenderer,
+        PieChart,
+        TitleComponent,
+        TooltipComponent,
+        GridComponent,
+        UniversalTransition
+    ]);
+
+    const chartRef = ref(null);
+
+    const pieData = displayedCategory.map((name, idx) => ({
+        name,
+        value: displayedValue[idx] ?? 0
+    }));
+
+    const series = [
+        {
+            name: 'Ausgaben',
+            type: 'pie',
+            radius: '50%',
+            center: ['50%', '55%'],
+            data: pieData,
+            label: {
+                formatter: '{b}: {c} ({d}%)'
+            },
+          
+        }
+    ];
+
+    const options = {
+        color: ['lightblue', 'lightgreen', 'lightcoral', 'lightsalmon', 'lightseagreen', 'lightpink', 'lightgray'],
+        backgroundColor: '#FFFFFF',
+        title: {
+            text: 'Ausgaben (nach Kategorie)',
+            left: 'center'
+        },
+        tooltip: {
+            trigger: 'item',
+            formatter: '{b}: {c} ({d}%)'
+        },
+        legend: {
+            orient: 'vertical',
+            left: 'left',
+            data: displayedCategory
+        },
+        series
+    };
+
+    watch(() => options, (val) => {
+        console.log('Pie chart options changed:', val);
+    });
+
+    return { options, chartRef };
+}
+
+
+
+
+async function renderBarChart(){
+    const data = await loadChartData();
+    const dataTime = Array.isArray(data?.date) ? data.date : [];
+    const dataValue = Array.isArray(data?.amount) ? data.amount : [];
+    const category = Array.isArray(data?.category) ? data.category : [];
 
     const displayedTime = dataTime.slice(0,7);
     const displayedValue = dataValue.slice(0,7);
@@ -53,7 +110,7 @@ function renderPieChart()
 
     use([
         CanvasRenderer,
-        PieChart,
+        BarChart,
         TitleComponent,
         TooltipComponent,
         GridComponent,
@@ -63,7 +120,7 @@ function renderPieChart()
     const series = [
         {
             data: displayedValue,
-            type: 'pie',
+            type: 'bar',
             itemStyle: {
                 color: 'blue'
             },
@@ -104,73 +161,6 @@ function renderPieChart()
 }
 
 
-
-
-function renderBarChart(){
-    const data = loadChartData();
-    const dataTime[] = data.Time;
-    const dataValue[] = data.Value;
-    const category[] = data.Category;
-
-    const displayedTime = dataTime.slice(0,7);
-    const displayedValue = dataValue.slice(0,7);
-    const displayedCategory = category.slice(0,7);
-
-    use([
-        CanvasRenderer,
-        BarChart,
-        TitleComponent,
-        TooltipComponent,
-        GridComponent,
-        UniversalTransition
-    ])
-    const chartRef = ref(null)
-    const series = [
-        {
-            data: displayedValue,
-            type: 'bar',
-            itemStyle: {
-                color: 'red'
-            },
-        }
-    ]
-    const options = {
-        text:{
-            color: "white"
-        },
-        title: {
-            text: 'Ausgaben'
-        },
-        tooltip: {
-            trigger: 'axis',
-            axisPointer: {
-                type: 'cross'
-            }
-        },
-        grid: {
-            left: '5%',
-            right: '5%',
-            bottom: '5%',
-            containLabel: true
-        },
-        xAxis: {
-            type: 'category',
-            data: displayedTime
-        },
-        yAxis: {
-            type: 'value'
-        },
-        series
-    }
-
-    watch(() => options, (val) => {
-        console.log('Chart options changed:', val)
-    })
-}
-
-
-
-*/
 use([
     CanvasRenderer,
     BarChart,
@@ -186,15 +176,13 @@ const series = [
         data: [120, 200, 150, 80, 70, 110, 130],
         type: 'bar',
         itemStyle: {
-            color: 'red'
+            color: 'lightblue'
         },
     }
 ]
 
 const options = {
-    text:{
-        color: "white"
-    },
+    backgroundColor: '#FFFFFF',
     title: {
         text: 'Ausgaben'
     },
@@ -217,22 +205,22 @@ const options = {
     yAxis: {
         type: 'value'
     },
+    
     series
 }
 
-// Native ECharts test
+// Native ECharts test: initialize with pie chart options on mount
 const nativeChartDiv = ref(null)
-onMounted(() => {
-    if (nativeChartDiv.value) {
+onMounted(async () => {
+    if (!nativeChartDiv.value) return
+    try {
+        const { options: pieOptions } = await renderPieChart()
         const chart = echarts.init(nativeChartDiv.value)
-        chart.setOption(options)
-        console.log('Native ECharts chart initialized:', chart)
+        chart.setOption(pieOptions)
+        console.log('Pie chart initialized')
+    } catch (err) {
+        console.error('Failed to initialize pie chart:', err)
     }
-})
-
-// Watch for changes to options
-watch(() => options, (val) => {
-    console.log('Chart options changed:', val)
 })
 </script>
 

@@ -17,7 +17,7 @@
       </v-menu>
     </v-col>
 
-    <v-row align="center" justify="center">
+      <v-row align="center" justify="center">
       <v-col cols="auto">
         <v-btn icon="mdi-account" class="text-primary"></v-btn>
       </v-col>
@@ -57,7 +57,9 @@
           </div>
         </template>
       </v-navigation-drawer>
-      <v-main style="height: 870px"></v-main>
+      <v-main style="height: 870px">
+        <slot />
+      </v-main>
     </v-layout>
   </v-card>
 </template>
