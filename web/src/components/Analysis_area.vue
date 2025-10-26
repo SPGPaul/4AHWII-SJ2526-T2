@@ -8,7 +8,7 @@ import * as echarts from 'echarts/core'
 import { onMounted, ref } from 'vue'
 import { watch } from 'vue'
 
-
+// waiting on proper implementation of API tokens...
 async function loadChartData(){
     const apiUrl = "https://elegant-eggs-b247740f2b.strapiapp.com/api/Receipts";
     const token = "54a258000325fcbff04e65b292fecd2ca70258552324762fd2520e1932269765803183eb47586c2203f12b3abd7c7dbbe3dffe729c8334508eeba14656a85aa5bb7441ec939788a76a8a7e6066b1973362e5cdb6770a50dbecf0d74a4bcebe7c650eb54f08b757e0770003032e5817aa26dc6664c373e2c2e8667888d2d3f2c1";
@@ -129,11 +129,9 @@ async function renderBarChart(){
         const v = it?.amount;
         return typeof v === 'number' ? v : (v ? Number(v) : 0);
     });
-    const category = items.map((it: any) => it?.category ?? 'Unbekannt');
 
     const displayedTimeRaw = dataTime.slice(0, 7);
     const displayedValue = dataValue.slice(0, 7);
-    const displayedCategory = category.slice(0, 7);
 
     const formatDateShort = (iso: any) => {
         try {
