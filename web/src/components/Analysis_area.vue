@@ -109,7 +109,7 @@ async function renderPieChart() {
         },
         tooltip: {
             trigger: 'item',
-            formatter: '{b}: {c} ({d}%)'
+            formatter: '{b}: {c}€ ({d}%)'
         },
         legend: {
             orient: 'vertical',
@@ -193,7 +193,7 @@ async function renderBarChart(){
                 const p = Array.isArray(params) ? params[0] : params
                 const idx = p?.dataIndex ?? 0
                 const dateLabel = formatDateFull(displayedTimeRaw[idx])
-                return `${dateLabel}<br/>${p.seriesName || ''}: ${p.value}`
+                return `${dateLabel}<br/>Wert: ${p.value} €`
             }
         },
         grid: {
