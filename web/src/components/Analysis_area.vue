@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import VChart from 'vue-echarts'
-
-// Register required ECharts renderers / charts / components
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { BarChart, PieChart } from 'echarts/charts'
@@ -10,7 +7,6 @@ import { UniversalTransition } from 'echarts/features'
 import * as echarts from 'echarts/core'
 import { onMounted, ref } from 'vue'
 import { watch } from 'vue'
-// removed unused imports (cleaner build)
 
 
 async function loadChartData(){
@@ -38,8 +34,6 @@ async function renderPieChart() {
     const displayedTimeRaw = dataTime.slice(0, 7);
     const displayedValue = dataValue.slice(0, 7);
     const displayedCategory = category.slice(0, 7);
-
-    // helpers to format dates for axis labels and tooltips
     const formatDateShort = (iso: any) => {
         try {
             const d = new Date(iso)
@@ -71,15 +65,12 @@ async function renderPieChart() {
 
     const chartRef = ref(null);
 
-    // Aggregate values by category so identical category names are summed
     const agg: Record<string, number> = {};
     for (let i = 0; i < displayedCategory.length; i++) {
         const name = displayedCategory[i] ?? 'Unbekannt';
         const val = Number(displayedValue[i] ?? 0) || 0;
         agg[name] = (agg[name] || 0) + val;
     }
-
-    // palette and pieData built from aggregated map
     const palette = ['#4e79a7', '#f28e2b', '#e15759', '#76b7b2', '#59a14f', '#b07aa1', '#ff9da7'];
     const pieData = Object.keys(agg).map((name, idx) => ({
         name,
@@ -144,7 +135,6 @@ async function renderBarChart(){
     const displayedValue = dataValue.slice(0, 7);
     const displayedCategory = category.slice(0, 7);
 
-    // helpers to format dates for axis labels and tooltips
     const formatDateShort = (iso: any) => {
         try {
             const d = new Date(iso)
@@ -219,7 +209,6 @@ async function renderBarChart(){
     return { options, chartRef };
 }
 
-// Native ECharts test: initialize with pie chart options on mount
 const nativeChartDiv = ref(null)
 onMounted(async () => {
     if (!nativeChartDiv.value) return
