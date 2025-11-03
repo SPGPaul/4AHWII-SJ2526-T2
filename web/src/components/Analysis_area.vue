@@ -82,7 +82,7 @@ async function renderPieChart() {
         {
             name: 'Ausgaben',
             type: 'pie',
-            radius: '50%',
+            radius: '60%',
             center: ['50%', '55%'],
             data: pieData,
             label: {
@@ -255,5 +255,5 @@ onMounted(async () => {
 
 <template>
     <h2>Analysis Area Component</h2>
-    <div ref="nativeChartDiv" style="height: 400px; width: 40%; background: #FFFFFF; margin-top: 16px;">Ausgaben </div>
+    <div ref="nativeChartDiv" style="height: 400px; width: 70%; background: #FFFFFF; margin-top: 16px;">Ausgaben </div>
 </template>

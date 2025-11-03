@@ -4,19 +4,32 @@
       <v-btn icon @click="toggleDrawer">
         <v-icon class="text-primary">mdi-menu</v-icon>
       </v-btn>
+      <v-btn to="/">
       <v-toolbar-title class="text-primary">Rechnungsradar</v-toolbar-title>
+      </v-btn>
       <v-spacer></v-spacer>
 
       <v-btn icon color="primary">
-        <v-icon class="text-primary">mdi-account</v-icon>
+        <v-icon class="text-primary" size="35px">mdi-account-circle-outline</v-icon>
 
         <v-menu activator="parent">
-          <v-list>
+          <v-list width="150px" class="bg-white">
             <v-list-item>
-              <v-list-item-title>Profil</v-list-item-title>
+              <v-list-item-title>
+              <v-btn to="/login" class="bg-white" flat>
+              <v-icon class="text-primary" >mdi-account</v-icon> Profil 
+            </v-btn></v-list-item-title>
+              
+              
             </v-list-item>
+            
             <v-list-item>
-              <v-list-item-title>Logout</v-list-item-title>
+              <v-list-item-title>
+                <v-btn to="/" class="bg-white" flat>
+                <v-icon class="text-primary">mdi-logout</v-icon> Logout
+                </v-btn>
+              </v-list-item-title>
+              
             </v-list-item>
           </v-list>
         </v-menu>
