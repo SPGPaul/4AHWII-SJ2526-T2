@@ -102,39 +102,145 @@ async function getAllExpensesMonth(): Promise<number> {
     }
 }
 
-const changeRate = ref<string>('...');
-const changeColor = ref<string>('black');
+const expensesThisMonth = ref<number>(0)
+const changeRate = ref<string>('...')
+const changeColor = ref<string>('black')
+const receiptCount = ref<number>(0)
+const barChartDiv = ref(null)
 
-async function refreshChangeRate() {
-    try {
-        const rate = await calculateChangeRate();
-        const prefix = rate > 0 ? 'Δ' : '∇';
-        changeRate.value = `${prefix}${rate}%`;
-        const color = rate > 0 ? 'red' : 'green';
-        changeColor.value = color;
-        return color;
-    } catch (e) {
-        console.error(e);
-        changeRate.value = 'n/a';
-        changeColor.value = 'black';
-    }
+function formatEuro(val: number) {
+    return `${val.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€`;
 }
 
-const expensesThisMonth = ref<number | null>(null);
+async function getBarChartData() {
+    const data = await parseChartData();
+    // Only current month
+    const filtered = data.filter(it => {
+        const itemUnix = it.unix_time ?? toUnixSeconds(it.date);
+        return !Number.isNaN(itemUnix) && itemUnix >= getLastMonthUnix();
+    });
+    // Aggregate by category
+    const agg: Record<string, number> = {};
+    for (const it of filtered) {
+        const cat = it.category ?? 'Unbekannt';
+        const raw = it.amount ?? it.total ?? 0;
+        const val = typeof raw === 'number' ? raw : Number(String(raw).replace(',', '.')) || 0;
+        agg[cat] = (agg[cat] || 0) + val;
+    }
+    // Sort by value descending
+    const sorted = Object.entries(agg).sort((a, b) => b[1] - a[1]);
+    // Top 5 biggest categories
+    const top = sorted.slice(0, 5);
+    return top.map(([cat, val]) => ({ category: cat, value: Math.round(val * 100) / 100 }));
+}
+
+async function refreshStats() {
+    const data = await parseChartData();
+    receiptCount.value = data.length;
+    // Expenses this month
+    const filtered = data.filter(it => {
+        const itemUnix = it.unix_time ?? toUnixSeconds(it.date);
+        return !Number.isNaN(itemUnix) && itemUnix >= getLastMonthUnix();
+    });
+    expensesThisMonth.value = filtered.reduce((sum, it) => {
+        const raw = it.amount ?? it.total ?? 0;
+        const val = typeof raw === 'number' ? raw : Number(String(raw).replace(',', '.')) || 0;
+        return sum + val;
+    }, 0);
+    // Previous month
+    const prevFiltered = data.filter(it => {
+        const itemUnix = it.unix_time ?? toUnixSeconds(it.date);
+        return !Number.isNaN(itemUnix) && itemUnix >= getPrevLastMonthUnix() && itemUnix < getLastMonthUnix();
+    });
+    const prevSum = prevFiltered.reduce((sum, it) => {
+        const raw = it.amount ?? it.total ?? 0;
+        const val = typeof raw === 'number' ? raw : Number(String(raw).replace(',', '.')) || 0;
+        return sum + val;
+    }, 0);
+    // Change rate
+    const prev = prevSum || 1;
+    const rawPercent = ((expensesThisMonth.value - prev) / prev) * 100;
+    const percentailChange = Math.round(rawPercent * 10) / 10;
+    const prefix = percentailChange > 0 ? 'Δ +' : '∇ ';
+    changeRate.value = `${prefix}${percentailChange}% im Vergleich zum Vormonat`;
+    changeColor.value = percentailChange > 0 ? '#f44336' : '#4caf50';
+}
+
+const palette = ['#ffa726', '#ffccbc', '#4dd0e1', '#aed581', '#ba68c8'];
 
 onMounted(async () => {
-    await refreshChangeRate();
-    expensesThisMonth.value = await getAllExpensesMonth();
+    await refreshStats();
+    // Bar chart
+    const chartData = await getBarChartData();
+    if (barChartDiv.value) {
+        use([CanvasRenderer, BarChart, TitleComponent, TooltipComponent, GridComponent, UniversalTransition]);
+        const chart = echarts.init(barChartDiv.value);
+        chart.setOption({
+            color: palette,
+            grid: { left: '2%', right: '2%', top: 30, bottom: 30, containLabel: true },
+            xAxis: {
+                type: 'value',
+                axisLabel: {
+                    formatter: (val: number) => formatEuro(val),
+                    color: '#222',
+                },
+                splitLine: { show: false },
+            },
+            yAxis: {
+                type: 'category',
+                data: chartData.map(d => d.category),
+                axisLabel: { color: '#222', fontWeight: 'bold' },
+                axisTick: { show: false },
+                axisLine: { show: false },
+            },
+            series: [{
+                type: 'bar',
+                data: chartData.map((d, i) => ({
+                    value: d.value,
+                    itemStyle: { color: palette[i % palette.length] }
+                })),
+                barWidth: 30,
+                label: {
+                    show: true,
+                    position: 'right',
+                    formatter: (params: any) => formatEuro(params.value),
+                    fontWeight: 'bold',
+                    color: '#222'
+                },
+            }],
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: { type: 'shadow' },
+                formatter: (params: any) => {
+                    const p = Array.isArray(params) ? params[0] : params;
+                    return `${p.name}: ${formatEuro(p.value)}`;
+                },
+                backgroundColor: '#fff',
+                textStyle: { color: '#222' },
+            },
+            title: { text: '', left: 'center', top: 0 },
+        });
+    }
 });
 </script>
 
 
+
 <template>
-<div>
-    <h1 class="dashboard-card__header" style="color:black">Übersicht</h1>
-    <div class="dashboard-card__body">
-        <h3 style="color:black">{{ expensesThisMonth }}€ Ausgaben im letzten Monat</h3>
-        <h3 style="color:black" id="changeRateLM" :style="{ color: changeColor }">{{ changeRate }} im Vergleich zum letzten Monat</h3>
+<div style="width:100%;max-width:900px;margin:0 auto;padding:32px 0;">
+    <h1 style="font-size:2.5rem;font-weight:700;color:#222;margin-bottom:0.5em;">Dashboard</h1>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5em;">
+        <div style="font-size:1.5rem;font-weight:500;color:#222;">Gesamtausgaben November: {{ formatEuro(expensesThisMonth) }}</div>
+        <div :style="{fontSize:'1.5rem',fontWeight:'500',color:changeColor}">{{ changeRate }}</div>
     </div>
-  </div>
+    <div style="display:flex;align-items:flex-start;gap:32px;">
+        <div style="flex:2;">
+            <div ref="barChartDiv" style="height:220px;width:100%;"></div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+            <div style="font-size:4rem;font-weight:700;color:#222;line-height:1;">{{ receiptCount }}</div>
+            <div style="font-size:1.2rem;color:#222;">Belege gescannt</div>
+        </div>
+    </div>
+</div>
 </template>
