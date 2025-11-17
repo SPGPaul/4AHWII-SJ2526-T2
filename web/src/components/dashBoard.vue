@@ -80,18 +80,61 @@ async function calculateChangeRate()
     const percentailChange = Math.round(rawPercent * 100) / 100;
     return percentailChange;
 }
-calculateChangeRate().then(changeRate => {
-    console.log('Percentage change in expenses:', changeRate);
-}).catch(error => {
-    console.error('Error calculating change rate:', error);
-});
 
+async function getAllExpensesMonth(): Promise<number> {
+    try {
+        const expenses = await parseChartData();
+        let expensesThisMonth = 0;
+        for (const item of expenses) {
+            const itemUnix = item.unix_time ?? toUnixSeconds(item.date);
+            if (Number.isNaN(itemUnix)) continue;
+            if (itemUnix >= getLastMonthUnix()) {
+                const raw = item.amount ?? item.total ?? 0;
+                const amount = typeof raw === 'number' ? raw : Number(String(raw).replace(',', '.')) || 0;
+                expensesThisMonth += amount;
+            }
+        }
+        // round to 2 decimals
+        return Math.round(expensesThisMonth * 100) / 100;
+    } catch (e) {
+        console.error(e);
+        return 0;
+    }
+}
+
+const changeRate = ref<string>('...');
+const changeColor = ref<string>('black');
+
+async function refreshChangeRate() {
+    try {
+        const rate = await calculateChangeRate();
+        const prefix = rate > 0 ? 'Δ' : '∇';
+        changeRate.value = `${prefix}${rate}%`;
+        const color = rate > 0 ? 'red' : 'green';
+        changeColor.value = color;
+        return color;
+    } catch (e) {
+        console.error(e);
+        changeRate.value = 'n/a';
+        changeColor.value = 'black';
+    }
+}
+
+const expensesThisMonth = ref<number | null>(null);
+
+onMounted(async () => {
+    await refreshChangeRate();
+    expensesThisMonth.value = await getAllExpensesMonth();
+});
 </script>
 
 
 <template>
-  <div class="dashboard">
-    <h1 style="color:black">Dashboard</h1>
-    
+<div>
+    <h1 class="dashboard-card__header" style="color:black">Übersicht</h1>
+    <div class="dashboard-card__body">
+        <h3 style="color:black">{{ expensesThisMonth }}€ Ausgaben im letzten Monat</h3>
+        <h3 style="color:black" id="changeRateLM" :style="{ color: changeColor }">{{ changeRate }} im Vergleich zum letzten Monat</h3>
+    </div>
   </div>
 </template>
