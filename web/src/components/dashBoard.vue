@@ -25,40 +25,67 @@ async function parseChartData(): Promise<any[]>{
     return items;
 }
 
+function toUnixSeconds(dateStr: string | number | Date) {
+    const d = typeof dateStr === 'number' || dateStr instanceof Date ? new Date(dateStr) : new Date(String(dateStr));
+    const t = Math.floor(d.getTime() / 1000);
+    return Number.isFinite(t) ? t : NaN;
+}
+
 function getUnixTime() {
-    const unixSeconds = Math.floor(Date.now() / 1000);
-    return unixSeconds;
+    return Math.floor(Date.now() / 1000);
 }
 
-
-function getLastMonthUnix(){
-    const currentDate = getUnixTime();
-    const lastMonthDate = currentDate - (30 * 24 * 60 * 60);
-    return lastMonthDate;
+function getLastMonthUnix() {
+    return getUnixTime() - (30 * 24 * 60 * 60);
 }
 
-function getPrevLastMonthUnix(){
-    const currentDate = getUnixTime();
-    const prevLastMonthDate = currentDate - (61 * 24 * 60 * 60);
-    return prevLastMonthDate;
+function getPrevLastMonthUnix() {
+    return getUnixTime() - (61 * 24 * 60 * 60);
 }
 
-async function getExpnesesLastMonth(){
+async function getExpnesesLastMonth() {
     const data = await parseChartData();
-    let lastMonthList = [];
-    let prevLastMonthList = [];
-    for(let i = 0; i < data.length; i++){
-        if(data[i].unix_time >= getLastMonthUnix()){
-            lastMonthList.push(data[i]);
-        } else if(data[i].unix_time >= getPrevLastMonthUnix() && data[i].unix_time < getLastMonthUnix()){
-            prevLastMonthList.push(data[i]);
+    const lastMonthList: any[] = [];
+    const prevLastMonthList: any[] = [];
+
+    for (let i = 0; i < data.length; i++) {
+        const item = data[i];
+        const itemUnix = item.unix_time ?? toUnixSeconds(item.date);
+
+        if (Number.isNaN(itemUnix)) {
+            console.warn('Skipping item with invalid date/unix_time:', item);
+            continue;
+        }
+
+        if (itemUnix >= getLastMonthUnix()) {
+            lastMonthList.push(item);
+        } else if (itemUnix >= getPrevLastMonthUnix() && itemUnix < getLastMonthUnix()) {
+            prevLastMonthList.push(item);
         }
     }
-    console.log('Last month items:', lastMonthList);
-    console.log('Previous month items:', prevLastMonthList);
-       
+
+    return { lastMonthList, prevLastMonthList };
 }
-getExpnesesLastMonth();
+
+
+async function calculateChangeRate()
+{
+    const expensesLastMonth = await getExpnesesLastMonth();
+    const expensesPrevLastMonth = expensesLastMonth.prevLastMonthList;
+
+    const lastCount = expensesLastMonth.lastMonthList.length;
+    const prevCount = expensesPrevLastMonth.length || 1; 
+
+    const rawPercent = ((lastCount - prevCount) / prevCount) * 100;
+    const percentailChange = Math.round(rawPercent * 100) / 100;
+    return percentailChange;
+}
+calculateChangeRate().then(changeRate => {
+    console.log('Percentage change in expenses:', changeRate);
+}).catch(error => {
+    console.error('Error calculating change rate:', error);
+});
+
 </script>
 
 
