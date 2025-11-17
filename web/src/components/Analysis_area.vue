@@ -15,7 +15,6 @@ async function loadChartData(){
     const res = await fetch(apiUrl, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
     });
-    console.log('Fetch response:', res);
     if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
     return await res.json();
 }
