@@ -165,8 +165,45 @@ async function refreshStats() {
     changeColor.value = percentailChange > 0 ? '#f44336' : '#4caf50';
 }
 
-async function loadImages(){
-    
+async function downloadImage(assetId = 1): Promise<string | null> {
+    try {
+        const base = 'https://elegant-eggs-b247740f2b.strapiapp.com';
+        // first fetch metadata to get the file URL
+        const metaRes = await fetch(`${base}/api/download/files/${assetId}`);
+        if (!metaRes.ok) throw new Error(`HTTP ${metaRes.status} ${metaRes.statusText}`);
+        const fileMeta = await metaRes.json();
+
+        const possibleUrl =
+            fileMeta?.url ||
+            fileMeta?.data?.attributes?.url ||
+            fileMeta?.data?.attributes?.formats?.thumbnail?.url ||
+            null;
+
+        if (!possibleUrl) {
+            console.warn('No url found for asset', assetId, fileMeta);
+            return null;
+        }
+
+        // build absolute URL if needed
+        const fullUrl = possibleUrl.startsWith('http')
+            ? possibleUrl
+            : `${base.replace(/\/$/, '')}${possibleUrl.startsWith('/') ? '' : '/'}${possibleUrl}`;
+
+        // fetch the binary image
+        const fileRes = await fetch(fullUrl);
+        if (!fileRes.ok) throw new Error(`Failed to download file: HTTP ${fileRes.status} ${fileRes.statusText}`);
+        const blob = await fileRes.blob();
+
+        if (!blob.type.startsWith('image/')) {
+            console.warn('Downloaded file is not an image', blob.type);
+        }
+
+        // return an object URL that can be used as src in <img>
+        return URL.createObjectURL(blob);
+    } catch (err) {
+        console.error('Failed to download image asset:', err);
+        return null;
+    }
 }
 
 const palette = ['#ffa726', '#ffccbc', '#4dd0e1', '#aed581', '#ba68c8'];
@@ -230,6 +267,8 @@ onMounted(async () => {
 
 
 <template>
+<br></br>
+<br></br>
 <div style="width:100%;max-width:900px;margin:0 auto;padding:32px 0;">
     <h1 style="font-size:2.5rem;font-weight:700;color:#222;margin-bottom:0.5em;">Dashboard</h1>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5em;">
