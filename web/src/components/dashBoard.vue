@@ -1,12 +1,11 @@
 <script setup lang ="ts">
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
-import { BarChart, PieChart } from 'echarts/charts'
+import { BarChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, GridComponent } from 'echarts/components'
 import { UniversalTransition } from 'echarts/features'
 import * as echarts from 'echarts/core'
 import { onMounted, ref } from 'vue'
-import { watch } from 'vue'
 
 async function loadChartData(){
     const apiUrl = "https://elegant-eggs-b247740f2b.strapiapp.com/api/Receipts";
@@ -166,6 +165,10 @@ async function refreshStats() {
     changeColor.value = percentailChange > 0 ? '#f44336' : '#4caf50';
 }
 
+async function loadImages(){
+    
+}
+
 const palette = ['#ffa726', '#ffccbc', '#4dd0e1', '#aed581', '#ba68c8'];
 
 onMounted(async () => {
@@ -239,7 +242,16 @@ onMounted(async () => {
         </div>
         <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;">
             <div style="font-size:4rem;font-weight:700;color:#222;line-height:1;">{{ receiptCount }}</div>
-            <div style="font-size:1.2rem;color:#222;">Belege gescannt</div>
+            <div style="font-size:1.2rem;color:#222;">Belege gesamt gescannt</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
+            <button type="button" style="padding:12px 24px;font-size:1rem;font-weight:600;color:#fff;background-color:#1976d2;border:none;border-radius:4px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2z"></path>
+                    <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+                Scan
+            </button>
         </div>
     </div>
 </div>

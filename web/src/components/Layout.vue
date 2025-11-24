@@ -1,58 +1,77 @@
 <template>
   <v-app>
-    <v-app-bar class="bg-white">
-      <v-btn icon @click="toggleDrawer">
-        <v-icon class="text-primary">mdi-menu</v-icon>
+    <!-- top bar -->
+    <v-app-bar app class="top-bar" flat>
+      <v-btn icon @click="drawer = !drawer" class="mx-2">
+        <v-icon>mdi-menu</v-icon>
       </v-btn>
-      <v-toolbar-title class="text-primary">Rechnungsradar</v-toolbar-title>
-      <v-spacer></v-spacer>
 
-      <v-btn icon color="primary">
-        <v-icon class="text-primary">mdi-account</v-icon>
+      <v-toolbar-title class="app-title">Rechnungsradar</v-toolbar-title>
 
-        <v-menu activator="parent">
-          <v-list>
-            <v-list-item>
-              <v-list-item-title>Profil</v-list-item-title>
-            </v-list-item>
-            <v-list-item>
-              <v-list-item-title>Logout</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-menu>
+      <v-spacer />
+
+      <!-- top-right rounded profile (moved from drawer) -->
+      <v-btn
+        class="rounded-profile top-profile-btn"
+        elevation="2"
+        icon
+        :title="'Profil'"
+      >
+        <span class="profile">P</span>
       </v-btn>
     </v-app-bar>
 
-    <v-navigation-drawer v-model="drawer" temporary class="bg-white">
-      <v-list density="compact" nav>
-        <v-list-item
-          class="text-primary"
-          prepend-icon="mdi-view-dashboard"
-          title="Dashboard"
-          to="/dashboard"
-        ></v-list-item>
-        <v-list-item
-          class="text-primary"
-          prepend-icon="mdi-camera"
-          title="Beleg scannen"
-          to="/scan"
-        ></v-list-item>
-        <v-list-item
-          class="text-primary"
-          prepend-icon="mdi-file-document"
-          title="gescannte Belege"
-          to=""
-        ></v-list-item>
-        <v-list-item
-          class="text-primary"
-          prepend-icon="mdi-poll"
-          title="Analysen"
-          to="/analysis"
-        ></v-list-item>
+    <!-- slim left sidebar -->
+    <v-navigation-drawer
+      app
+      v-model="drawer"
+      class="left-drawer"
+      permanent
+      width="96"
+    >
+      <v-list dense nav class="drawer-list">
+        <v-list-item to="/dashboard" class="drawer-item">
+          <v-list-item-icon>
+            <v-icon>mdi-view-dashboard</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>Übersicht</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+
+        <v-list-item to="/scan" class="drawer-item">
+          <v-list-item-icon>
+            <v-icon>mdi-camera</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>Beleg scannen</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+
+        <v-list-item to="/scans" class="drawer-item">
+          <v-list-item-icon>
+            <v-icon>mdi-file-document</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>gescannte Belege</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+
+        <v-list-item to="/analysis" class="drawer-item">
+          <v-list-item-icon>
+            <v-icon>mdi-poll</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>Analysen</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+
+        <v-spacer />
+        <!-- removed bottom profile from drawer -->
       </v-list>
     </v-navigation-drawer>
 
-    <v-main style="height: 870px">
+    <v-main class="main-area">
       <slot />
     </v-main>
   </v-app>
@@ -61,15 +80,95 @@
 <script setup lang="ts">
 import { ref } from "vue";
 
-const drawer = ref(false); // Zustand des Navigationsdrawers
-
-function toggleDrawer() {
-  drawer.value = !drawer.value; // Toggle-Funktion
-}
+const drawer = ref(true);
 </script>
 
-<style lang="scss">
-.v-navigation-drawer {
-  background-color: #e1f5fe;
+<style lang="scss" scoped>
+/* colors tuned to image */
+$sidebar-bg: #a8e6b8; /* light green */
+$topbar-bg: #bcefc2;
+$text-primary: #0b2b18;
+$border-dark: #222;
+
+.top-bar {
+  background-color: $topbar-bg !important;
+  border-bottom: 4px solid $border-dark;
+  height: 72px;
+  align-items: center;
+  position: relative; /* needed for absolute positioned top-profile-btn */
+}
+
+/* center title visually */
+.app-title {
+  margin: 0 auto;
+  font-size: 40px;
+  font-weight: 700;
+  color: $text-primary !important;
+  text-align: center;
+}
+
+/* top-right profile button (moved from drawer) */
+.top-profile-btn {
+  position: absolute;
+  right: 12px;
+  top: 12px; /* vertically center inside 72px top bar: (72-48)/2 = 12 */
+}
+
+/* round profile shared style */
+.rounded-profile {
+  background: linear-gradient(#f5fff8, #e9fff0);
+  border-radius: 999px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.12);
+  padding: 0;
+}
+
+.profile{
+  font-size: 20px;
+  line-height: 1;
+  color: black;
+}
+
+/* left drawer */
+.left-drawer {
+  background-color: $sidebar-bg !important;
+  border-right: 2px solid rgba(0,0,0,0.08);
+  padding-top: 12px;
+  box-sizing: border-box;
+}
+
+/* smaller icons and compact text like image */
+.drawer-list {
+  width: 100%;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.drawer-item {
+  color: $text-primary !important;
+  min-height: 36px;
+  padding-left: 6px;
+  padding-right: 6px;
+
+  .v-list-item-title {
+    font-size: 12px;
+    line-height: 1;
+    color: $text-primary !important;
+  }
+
+  .v-icon {
+    color: $text-primary !important;
+  }
+}
+
+/* main area spacing */
+.main-area {
+  background: white;
+  min-height: calc(100vh - 72px);
+  padding: 24px;
 }
 </style>
