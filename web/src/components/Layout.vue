@@ -27,7 +27,7 @@
       v-model="drawer"
       class="left-drawer"
       permanent
-      width="96"
+      width="80"
     >
       <v-list dense nav class="drawer-list">
         <v-list-item to="/dashboard" class="drawer-item">
@@ -84,16 +84,22 @@ const drawer = ref(true);
 </script>
 
 <style lang="scss" scoped>
-/* colors tuned to image */
+/* proportions and colors */
 $sidebar-bg: #a8e6b8; /* light green */
 $topbar-bg: #bcefc2;
 $text-primary: #0b2b18;
 $border-dark: #222;
 
+/* adjusted proportions */
+$topbar-height: 64px;
+$drawer-width: 80px;
+$profile-size: 40px;
+$app-title-size: 36px;
+
 .top-bar {
   background-color: $topbar-bg !important;
   border-bottom: 4px solid $border-dark;
-  height: 72px;
+  height: $topbar-height;
   align-items: center;
   position: relative; /* needed for absolute positioned top-profile-btn */
 }
@@ -101,7 +107,7 @@ $border-dark: #222;
 /* center title visually */
 .app-title {
   margin: 0 auto;
-  font-size: 40px;
+  font-size: $app-title-size;
   font-weight: 700;
   color: $text-primary !important;
   text-align: center;
@@ -111,15 +117,15 @@ $border-dark: #222;
 .top-profile-btn {
   position: absolute;
   right: 12px;
-  top: 12px; /* vertically center inside 72px top bar: (72-48)/2 = 12 */
+  top: calc((#{$topbar-height} - #{$profile-size}) / 2);
 }
 
 /* round profile shared style */
 .rounded-profile {
   background: linear-gradient(#f5fff8, #e9fff0);
   border-radius: 999px;
-  width: 48px;
-  height: 48px;
+  width: $profile-size;
+  height: $profile-size;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -128,7 +134,7 @@ $border-dark: #222;
 }
 
 .profile{
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1;
   color: black;
 }
@@ -139,36 +145,38 @@ $border-dark: #222;
   border-right: 2px solid rgba(0,0,0,0.08);
   padding-top: 12px;
   box-sizing: border-box;
+  width: $drawer-width !important;
 }
 
-/* smaller icons and compact text like image */
+/* smaller icons and compact text */
 .drawer-list {
   width: 100%;
-  padding-left: 8px;
-  padding-right: 8px;
+  padding-left: 6px;
+  padding-right: 6px;
 }
 
 .drawer-item {
   color: $text-primary !important;
-  min-height: 36px;
-  padding-left: 6px;
-  padding-right: 6px;
+  min-height: 40px;
+  padding-left: 4px;
+  padding-right: 4px;
 
   .v-list-item-title {
-    font-size: 12px;
+    font-size: 11px;
     line-height: 1;
     color: $text-primary !important;
   }
 
   .v-icon {
     color: $text-primary !important;
+    font-size: 20px;
   }
 }
 
-/* main area spacing */
+/* main area spacing adjusted for new topbar height */
 .main-area {
   background: white;
-  min-height: calc(100vh - 72px);
+  min-height: calc(100vh - #{$topbar-height});
   padding: 24px;
 }
 </style>
