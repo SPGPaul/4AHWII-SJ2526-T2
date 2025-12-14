@@ -1,1 +1,0 @@
-import{_ as t}from"./Layout.vue_vue_type_style_index_0_lang-DO0cMr_-.js";import{_ as r}from"./_plugin-vue_export-helper-DlAUqK2U.js";import{c as e,o as s,d7 as n,d4 as c}from"./index-B593wL9m.js";const _={};function d(f,o){const a=t;return s(),e(a,null,{default:n(()=>[...o[0]||(o[0]=[c("h1",null,"hello am dashboard",-1)])]),_:1})}const p=r(_,[["render",d]]);export{p as default};
