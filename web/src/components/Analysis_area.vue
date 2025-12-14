@@ -131,8 +131,15 @@ async function renderPieChart() {
         color: ['lightblue', 'lightgreen', 'lightcoral', 'lightsalmon', 'lightseagreen', 'lightpink', 'lightgray'],
         backgroundColor: '#FFFFFF',
         title: { text: 'Ausgaben (nach Kategorie)', left: 'center' },
+        // Make legend mobile-safe (prevents overlap into the pie)
+        legend: {
+            type: 'scroll',
+            orient: 'horizontal',
+            bottom: 0,
+            left: 'center',
+            data: pieData.map(d => d.name),
+        },
         tooltip: { trigger: 'item', formatter: '{b}: {c}€ ({d}%)' },
-        legend: { orient: 'vertical', left: 'left', data: pieData.map(d => d.name) },
         series
     };
 
@@ -243,7 +250,7 @@ onMounted(async () => {
         const { options: barOptions } = await renderBarChart()
 
         const container = nativeChartDiv.value as HTMLElement
-        container.className = 'analysis-container'               // added class
+        container.className = 'analysis-container'
         container.style.display = 'flex'
         container.style.flexDirection = 'column'
         container.style.alignItems = 'stretch'
@@ -252,21 +259,20 @@ onMounted(async () => {
 
         // top: two big charts
         const topRow = document.createElement('div')
-        topRow.style.display = 'flex'
+        topRow.className = 'analysis-toprow'
+        topRow.innerHTML = '' // keep deterministic
+        // remove fixed height; CSS handles responsive sizes
+        topRow.style.display = ''
         topRow.style.width = '100%'
-        topRow.style.height = '320px'
+        topRow.style.height = ''
         topRow.style.boxSizing = 'border-box'
-        topRow.style.padding = '8px'
+        topRow.style.padding = ''
 
         const leftDiv = document.createElement('div')
         const rightDiv = document.createElement('div')
-        leftDiv.style.flex = '1'
-        rightDiv.style.flex = '1'
-        leftDiv.style.height = '100%'
-        rightDiv.style.height = '100%'
-        leftDiv.style.minWidth = '0'
-        rightDiv.style.minWidth = '0'
-        leftDiv.style.marginRight = '8px'
+        leftDiv.className = 'analysis-chart'
+        rightDiv.className = 'analysis-chart'
+        leftDiv.style.marginRight = '' // let gap handle it
 
         topRow.appendChild(leftDiv)
         topRow.appendChild(rightDiv)
@@ -580,18 +586,37 @@ onMounted(async () => {
   transform: scale(1.25);
 }
 
-@media (max-width: 900px) {
-  .carousel-row { gap: 10px; padding: 8px; }
-  .trend-label { order: 3; width: 100%; text-align: center; font-size: 13px; }
-  .chart-wrapper { max-width: 100%; height: 200px; }
-  .trend-btn { padding: 8px; font-size: 16px; min-width: 40px; min-height: 40px; }
-  .dot { width: 11px; height: 11px; }
+/* NEW: responsive layout for the two main charts */
+.analysis-toprow {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+  align-items: stretch;
 }
 
+.analysis-chart {
+  flex: 1;
+  min-width: 0;
+  height: 340px; /* desktop default */
+}
+
+/* stack charts on smaller screens */
+@media (max-width: 900px) {
+  .analysis-toprow {
+    flex-direction: column;
+    padding: 8px 0;
+  }
+  .analysis-chart {
+    height: 280px;
+  }
+}
+
+/* very small screens */
 @media (max-width: 560px) {
-  .carousel-row { gap: 8px; }
-  .trend-label { order: 3; width: 100%; text-align: center; }
-  .chart-wrapper { max-width: 100%; height: 180px; }
-  .trend-btn { padding: 8px; }
+  .analysis-chart {
+    height: 240px;
+  }
 }
 </style>

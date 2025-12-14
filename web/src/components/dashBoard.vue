@@ -267,31 +267,203 @@ onMounted(async () => {
 
 
 <template>
-<br></br>
-<br></br>
-<div style="width:100%;max-width:900px;margin:0 auto;padding:32px 0;">
-    <h1 style="font-size:2.5rem;font-weight:700;color:#222;margin-bottom:0.5em;">Dashboard</h1>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5em;">
-        <div style="font-size:1.5rem;font-weight:500;color:#222;">Gesamtausgaben November: {{ formatEuro(expensesThisMonth) }}</div>
-        <div :style="{fontSize:'1.5rem',fontWeight:'500',color:changeColor}">{{ changeRate }}</div>
+  <div class="dashboard-root">
+    <h1 class="dashboard-title">Dashboard</h1>
+    <div class="dashboard-stats-row">
+      <div class="dashboard-total">
+        Gesamtausgaben November: {{ formatEuro(expensesThisMonth) }}
+      </div>
+      <div class="dashboard-change" :style="{ color: changeColor }">
+        {{ changeRate }}
+      </div>
     </div>
-    <div style="display:flex;align-items:flex-start;gap:32px;">
-        <div style="flex:2;">
-            <div ref="barChartDiv" style="height:220px;width:100%;"></div>
-        </div>
-        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-            <div style="font-size:4rem;font-weight:700;color:#222;line-height:1;">{{ receiptCount }}</div>
-            <div style="font-size:1.2rem;color:#222;">Belege gesamt gescannt</div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
-            <button type="button" style="padding:12px 24px;font-size:1rem;font-weight:600;color:#fff;background-color:#1976d2;border:none;border-radius:4px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2z"></path>
-                    <circle cx="12" cy="13" r="4"></circle>
-                </svg>
-                Scan
-            </button>
-        </div>
+    <div class="dashboard-main-row">
+      <div class="dashboard-bar">
+        <div ref="barChartDiv" class="dashboard-bar-chart"></div>
+      </div>
+      <div class="dashboard-count">
+        <div class="dashboard-receipt-count">{{ receiptCount }}</div>
+        <div class="dashboard-receipt-label">Belege gesamt gescannt</div>
+      </div>
+      <div class="dashboard-scan">
+        <button type="button" class="dashboard-scan-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2z"></path>
+            <circle cx="12" cy="13" r="4"></circle>
+          </svg>
+          Scan
+        </button>
+      </div>
     </div>
-</div>
+  </div>
 </template>
+
+<style scoped>
+/* filepath: c:\Users\Paul Fiala\Schule\Spengergasse\SWP\4AHWII\4AHWII-SJ2526-T2\web\src\components\dashBoard.vue */
+.dashboard-root {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 16px 0 16px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.dashboard-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 0.5em;
+  text-align: left;
+}
+
+.dashboard-stats-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5em;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.dashboard-total {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: #222;
+}
+
+.dashboard-change {
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.dashboard-main-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 32px;
+  align-items: stretch;
+  width: 100%;
+}
+
+.dashboard-bar {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+.dashboard-bar-chart {
+  height: 260px;
+  width: 100%;
+  min-width: 0;
+}
+
+.dashboard-count {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.dashboard-receipt-count {
+  font-size: 4rem;
+  font-weight: 700;
+  color: #222;
+  line-height: 1;
+}
+
+.dashboard-receipt-label {
+  font-size: 1.2rem;
+  color: #222;
+  text-align: center;
+}
+
+.dashboard-scan {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.dashboard-scan-btn {
+  padding: 14px 28px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+  background-color: #1976d2;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08);
+  transition: background 0.15s;
+}
+.dashboard-scan-btn:hover {
+  background-color: #125ea7;
+}
+
+/* Responsive styles */
+@media (max-width: 900px) {
+  .dashboard-main-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .dashboard-scan {
+    grid-column: span 2;
+    margin-top: 18px;
+  }
+}
+
+@media (max-width: 700px) {
+  .dashboard-root {
+    padding: 18px 4vw 0 4vw;
+  }
+  .dashboard-title {
+    font-size: 2rem;
+  }
+  .dashboard-main-row {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .dashboard-bar-chart {
+    height: 180px;
+  }
+  .dashboard-count, .dashboard-scan {
+    min-width: 0;
+    width: 100%;
+  }
+  .dashboard-scan {
+    margin-top: 10px;
+  }
+  .dashboard-receipt-count {
+    font-size: 2.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-root {
+    padding: 8px 2vw 0 2vw;
+  }
+  .dashboard-title {
+    font-size: 1.3rem;
+  }
+  .dashboard-total, .dashboard-change {
+    font-size: 1.1rem;
+  }
+  .dashboard-bar-chart {
+    height: 120px;
+  }
+  .dashboard-receipt-label {
+    font-size: 1rem;
+  }
+  .dashboard-scan-btn {
+    font-size: 1rem;
+    padding: 10px 16px;
+  }
+}
+</style>

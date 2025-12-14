@@ -1,36 +1,34 @@
 <template>
-  <v-app>
+  <v-app
+    :class="{ 'is-mobile': isMobile }"
+    :style="{ '--drawer-width': drawerWidth + 'px' }"
+  >
     <!-- top bar -->
     <v-app-bar app class="top-bar" flat>
       <v-btn icon @click="drawer = !drawer" class="mx-2">
         <v-icon>mdi-menu</v-icon>
       </v-btn>
-      <br></br>
+
       <v-toolbar-title class="app-title">Rechnungsradar</v-toolbar-title>
 
       <v-spacer></v-spacer>
 
-      <!-- top-right rounded profile (moved from drawer) -->
-      <v-btn
-        class="rounded-profile top-profile-btn"
-        elevation="2"
-        icon
-        :title="'Profil'"
-      >
+      <v-btn class="rounded-profile top-profile-btn" elevation="2" icon :title="'Profil'">
         <span class="profile">P</span>
       </v-btn>
     </v-app-bar>
 
-    <!-- slim left sidebar -->
+    <!-- slim left sidebar (responsive) -->
     <v-navigation-drawer
-      app
+      :app="!isMobile"
       v-model="drawer"
       class="left-drawer"
-      permanent
-      width="120"
+      :permanent="!isMobile"
+      :temporary="isMobile"
+      :width="drawerWidth"
     >
       <v-list dense nav class="drawer-list">
-        <v-list-item to="/dashboard" class="drawer-item">
+        <v-list-item to="/dashboard" class="drawer-item" @click="isMobile && (drawer = false)">
           <v-list-item-icon class="drawer-item-icon">
             <v-icon>mdi-view-dashboard</v-icon>
           </v-list-item-icon>
@@ -38,8 +36,7 @@
             <v-list-item-title>Übersicht</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-
-        <v-list-item to="/scan" class="drawer-item">
+        <v-list-item to="/scan" class="drawer-item" @click="isMobile && (drawer = false)">
           <v-list-item-icon class="drawer-item-icon">
             <v-icon>mdi-camera</v-icon>
           </v-list-item-icon>
@@ -47,8 +44,7 @@
             <v-list-item-title>Beleg scannen</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-
-        <v-list-item to="/scans" class="drawer-item">
+        <v-list-item to="/scans" class="drawer-item" @click="isMobile && (drawer = false)">
           <v-list-item-icon class="drawer-item-icon">
             <v-icon>mdi-file-document</v-icon>
           </v-list-item-icon>
@@ -56,8 +52,7 @@
             <v-list-item-title>gescannte Belege</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-
-        <v-list-item to="/analysis" class="drawer-item">  
+        <v-list-item to="/analysis" class="drawer-item" @click="isMobile && (drawer = false)">
           <v-list-item-icon class="drawer-item-icon">
             <v-icon>mdi-poll</v-icon>
           </v-list-item-icon>
@@ -65,9 +60,7 @@
             <v-list-item-title>Analysen</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-
         <v-spacer></v-spacer>
-        <!-- removed bottom profile from drawer -->
       </v-list>
     </v-navigation-drawer>
 
@@ -78,50 +71,60 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 
 const drawer = ref(true);
+
+const isMobile = ref(false);
+const drawerWidth = computed(() => (isMobile.value ? 280 : 120));
+
+const updateIsMobile = () => {
+  isMobile.value = window.matchMedia("(max-width: 700px)").matches;
+  if (isMobile.value) drawer.value = false;
+};
+
+onMounted(() => {
+  updateIsMobile();
+  window.addEventListener("resize", updateIsMobile);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("resize", updateIsMobile);
+});
 </script>
 
 <style lang="scss" scoped>
 /* proportions and colors */
-$sidebar-bg: #a8e6b8; /* light green */
+$sidebar-bg: #a8e6b8;
 $topbar-bg: #bcefc2;
 $text-primary: #0b2b18;
 $border-dark: #222;
 
-/* adjusted proportions (thicker topbar and sidebar) */
-$topbar-height: 120px; /* increased from 88px */
-$drawer-width: 120px;
+$topbar-height: 120px;
 $profile-size: 48px;
 $app-title-size: 38px;
 
-/* Allow absolutely positioned elements (profile) to overflow the app-bar without clipping */
 .top-bar {
   background-color: $topbar-bg !important;
   border-bottom: 5px solid $border-dark;
   height: $topbar-height;
-  /* tell Vuetify the toolbar height so layout offsets are correct */
   --v-toolbar-height: #{$topbar-height};
   align-items: center;
-  position: relative; /* needed for absolute positioned top-profile-btn */
+  position: relative;
   padding-left: 12px;
   padding-right: 12px;
-  overflow: visible; /* <- allow the rounded profile to be fully visible */
+  overflow: visible;
 }
 
-/* center title visually */
 .app-title {
   margin: 0 auto;
   font-size: $app-title-size;
   font-weight: 700;
   color: $text-primary !important;
   text-align: center;
-  line-height: 2;
+  line-height: 1.2;
 }
 
-/* top-right profile button (moved from drawer)
-   use top:50% + translateY(-50%) for robust vertical centering regardless of computed height */
 .top-profile-btn {
   position: absolute;
   right: 16px;
@@ -131,17 +134,6 @@ $app-title-size: 38px;
   overflow: visible;
 }
 
-/* ensure toolbar buttons vertically center and don't get clipped */
-.top-bar .v-btn {
-  min-width: 40px;
-  height: auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px;
-}
-
-/* round profile shared style */
 .rounded-profile {
   background: linear-gradient(#f5fff8, #e9fff0);
   border-radius: 999px;
@@ -160,27 +152,25 @@ $app-title-size: 38px;
   color: black;
 }
 
-/* left drawer - allow overflow so taller list items/icons are not clipped */
 .left-drawer {
   background-color: $sidebar-bg !important;
   border-right: 2px solid rgba(0,0,0,0.08);
   padding-top: 16px;
   box-sizing: border-box;
-  width: $drawer-width !important;
-  overflow: visible; /* <- prevent vertical clipping of icons/text */
+  overflow: visible;
+  /* IMPORTANT: keine feste width hier erzwingen, sonst kollidiert es mit :width */
 }
 
-/* list layout tuned for wider sidebar */
-/* make each drawer-item vertical: icon above text, centered */
 .drawer-list {
   width: 100%;
   padding-left: 8px;
   padding-right: 8px;
 }
 
+/* Desktop: icon over text */
 .drawer-item {
   color: $text-primary !important;
-  min-height: 96px; /* slightly increased so icons/text don't get cut */
+  min-height: 96px;
   padding: 8px 6px;
   display: flex;
   flex-direction: column;
@@ -188,7 +178,6 @@ $app-title-size: 38px;
   justify-content: center;
   text-align: center;
 
-  /* override internal content alignment */
   .v-list-item__content {
     width: 100%;
     display: flex;
@@ -220,12 +209,59 @@ $app-title-size: 38px;
   }
 }
 
-/* main area spacing adjusted for new topbar height */
+/* IMPORTANT:
+   Do NOT override v-main padding (Vuetify uses it for layout offsets).
+   Put your spacing into the inner wrap instead.
+*/
 .main-area {
   background: white;
-  /* ensure main content starts below the taller top bar */
+  box-sizing: border-box;
+  /* remove the old calculated paddings */
+  padding: unset;
+  min-height: 100%;
+}
+
+/* add page padding inside the wrap (after drawer/appbar offset) */
+.main-area :deep(.v-main__wrap) {
   padding: 24px;
-  padding-top: calc(#{$topbar-height} + 24px);
-  min-height: calc(100vh - #{$topbar-height});
+  box-sizing: border-box;
+}
+
+/* Mobile: ignore any left layout offset to prevent "white strip"/overlap */
+@media (max-width: 700px) {
+  .top-bar {
+    height: 64px;
+    --v-toolbar-height: 64px;
+  }
+
+  .app-title {
+    font-size: 22px;
+  }
+
+  .main-area :deep(.v-main__wrap) {
+    padding: 12px 4vw;
+  }
+
+  /* Mobile drawer: bessere Lesbarkeit, größere Touch-Ziele */
+  .drawer-item {
+    min-height: 56px;
+    flex-direction: row;
+    justify-content: flex-start;
+    text-align: left;
+    padding: 10px 10px;
+
+    .v-list-item__content {
+      align-items: flex-start;
+    }
+
+    .v-list-item-title {
+      margin-top: 0;
+      font-size: 14px;
+    }
+
+    .v-icon {
+      font-size: 24px;
+    }
+  }
 }
 </style>
