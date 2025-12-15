@@ -18,7 +18,6 @@
       </v-btn>
     </v-app-bar>
 
-    <!-- slim left sidebar (responsive) -->
     <v-navigation-drawer
       :app="!isMobile"
       v-model="drawer"
@@ -28,6 +27,8 @@
       :width="drawerWidth"
     >
       <v-list dense nav class="drawer-list">
+        <br>
+        <br></br>
         <v-list-item to="/dashboard" class="drawer-item" @click="isMobile && (drawer = false)">
           <v-list-item-icon class="drawer-item-icon">
             <v-icon>mdi-view-dashboard</v-icon>
