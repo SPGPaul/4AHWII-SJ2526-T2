@@ -5,9 +5,9 @@ import AnalysisArea from '@/components/Analysis_area.vue'
 
 <template>
   <Layout>
-    <v-container class="py-8; color: white;">
-      <v-row>
-        <v-col cols="12" class="align-center">
+    <v-container fluid class="pa-0">
+      <v-row class="ma-0">
+        <v-col cols="12" class="pa-0">
           <AnalysisArea />
         </v-col>
       </v-row>
@@ -15,9 +15,10 @@ import AnalysisArea from '@/components/Analysis_area.vue'
   </Layout>
 </template>
 
-
 <style lang="scss">
-.v-container {
-  align-items: center;
+/* ensure the app and Vuetify root elements can grow to full viewport height */
+html, body, #app, .v-application {
+  height: 100%;
+  min-height: 100%;
 }
 </style>
