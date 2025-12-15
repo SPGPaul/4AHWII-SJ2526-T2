@@ -4,7 +4,9 @@
       <v-btn icon @click="toggleDrawer">
         <v-icon class="text-primary">mdi-menu</v-icon>
       </v-btn>
-      <v-toolbar-title class="text-primary">Rechnungsradar</v-toolbar-title>
+      <v-toolbar-title class="text-primary"
+        >Rechnungsradar ändern</v-toolbar-title
+      >
       <v-spacer></v-spacer>
 
       <v-btn icon color="primary">
