@@ -13,6 +13,7 @@ import { aliases, mdi } from 'vuetify/iconsets/mdi'
 export default createVuetify({
   theme: {
     defaultTheme: 'system',
+    primary: '#fffffff'
   },
   icons: {
     defaultSet: 'mdi',
