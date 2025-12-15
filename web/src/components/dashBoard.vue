@@ -267,6 +267,8 @@ onMounted(async () => {
 
 
 <template>
+  <br>
+  <br>
   <div class="dashboard-root">
     <h1 class="dashboard-title">Dashboard</h1>
     <div class="dashboard-stats-row">

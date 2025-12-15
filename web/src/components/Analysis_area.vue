@@ -221,9 +221,12 @@ let touchStartX: number | null = null
 let keyHandler: ((e: KeyboardEvent) => void) | null = null
 let dotsDiv: HTMLElement | null = null
 const dotButtons: HTMLElement[] = []
+let containerResizeObserver: ResizeObserver | null = null
 
 onBeforeUnmount(() => {
     window.removeEventListener('resize', resizeHandler)
+    containerResizeObserver?.disconnect()
+    containerResizeObserver = null
     miniChart?.dispose()
     leftEchart?.dispose()
     rightEchart?.dispose()
@@ -286,43 +289,20 @@ onMounted(async () => {
         // bottom: carousel controls + mini chart
         const bottomRow = document.createElement('div')
         bottomRow.className = 'carousel-row'                    
-        bottomRow.style.display = 'flex'
-        bottomRow.style.alignItems = 'center'
-        bottomRow.style.justifyContent = 'center'
-        bottomRow.style.width = '100%'
-        bottomRow.style.padding = '8px'
-        bottomRow.style.boxSizing = 'border-box'
-        bottomRow.style.gap = '12px'
 
         const prevBtn = document.createElement('button')
         prevBtn.className = 'trend-btn prev-btn'            
         prevBtn.textContent = '◀'
-        // make buttons larger for bigger carousel look
-        prevBtn.style.padding = '12px 16px'
-        prevBtn.style.fontSize = '20px'
 
         const nextBtn = document.createElement('button')
         nextBtn.className = 'trend-btn next-btn'            
         nextBtn.textContent = '▶'
-        nextBtn.style.padding = '12px 16px'
-        nextBtn.style.fontSize = '20px'
 
         const label = document.createElement('div')
         label.className = 'trend-label'                       
-        label.style.minWidth = '220px'     // increased
-        label.style.maxWidth = '420px'
-        label.style.textAlign = 'center'
-        label.style.fontWeight = '600'
-        label.style.fontSize = '15px'
 
         const chartWrapper = document.createElement('div')
         chartWrapper.className = 'chart-wrapper'               
-        chartWrapper.style.boxSizing = 'border-box'
-        chartWrapper.style.position = 'relative'
-        // make wrapper bigger
-        chartWrapper.style.maxWidth = '920px'
-        chartWrapper.style.width = '100%'
-        chartWrapper.style.height = '320px'
 
         chartWrapper.appendChild(document.createElement('div')) // inner div where echarts will mount
         bottomRow.appendChild(prevBtn)
@@ -333,15 +313,11 @@ onMounted(async () => {
         // Dots indicator (below chart)
         dotsDiv = document.createElement('div')
         dotsDiv.className = 'dots'                             // added clas
-        dotsDiv.style.width = '100%'
-        dotsDiv.style.marginTop = '12px'
         container.appendChild(bottomRow)
         container.appendChild(dotsDiv)
 
         miniChartDiv.value = chartWrapper.firstElementChild as HTMLElement
         if (miniChartDiv.value) {
-            miniChartDiv.value.style.width = '100%'
-            miniChartDiv.value.style.height = '100%'
             miniChart = echarts.init(miniChartDiv.value)
         }
 
@@ -394,10 +370,6 @@ onMounted(async () => {
         for (let i = 0; i < cats.length; i++) {
             const b = document.createElement('button')
             b.className = 'dot'                                   // use dot class
-            // enlarge dot visually
-            b.style.width = '16px'
-            b.style.height = '16px'
-            b.style.margin = '0 4px'
             b.title = cats[i].name
             b.onclick = () => {
             currentIndex.value = i
@@ -483,6 +455,15 @@ onMounted(async () => {
         }
         window.addEventListener('resize', resizeHandler)
 
+        // ResizeObserver catches drawer toggles / wrap padding changes / orientation changes
+        if ('ResizeObserver' in window) {
+            containerResizeObserver = new ResizeObserver(() => {
+                resizeHandler()
+            })
+            containerResizeObserver.observe(container)
+            containerResizeObserver.observe(chartWrapper)
+        }
+
     } catch (err) {
         console.error('Failed to initialize charts:', err)
     }
@@ -490,27 +471,33 @@ onMounted(async () => {
 </script>
 
 <template>
-    <h2>Analysis Area Component</h2>
     <div ref="nativeChartDiv" style="width: 100%; margin-top: 16px;">Loading charts…</div>
 </template>
 
 <style scoped>
 /* filepath: c:\Users\Paul Fiala\Schule\Spengergasse\SWP\4AHWII\4AHWII-SJ2526-T2\web\src\components\Analysis_area.vue */
 /* Carousel styling */
-.analysis-container { background: #fff; color: #222; }
+:deep(.analysis-container) { background: #fff; color: #222; }
 
-.carousel-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 12px;
+:deep(.carousel-row) {
+    display: grid;
+    grid-template-columns: 52px minmax(180px, 280px) 1fr 52px;
+    grid-template-areas: "prev label chart next";
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px;
   box-sizing: border-box;
-  flex-wrap: wrap;
+    width: 100%;
 }
 
+:deep(.prev-btn) { grid-area: prev; }
+:deep(.next-btn) { grid-area: next; }
+:deep(.trend-label) { grid-area: label; }
+:deep(.chart-wrapper) { grid-area: chart; }
+
 /* Prev/Next buttons - enlarged */
-.trend-btn {
+:deep(.trend-btn) {
   background: #f3f4f6;
   border: 1px solid #e3e6ea;
   padding: 10px 14px;
@@ -524,13 +511,14 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+    width: 100%;
 }
-.trend-btn:hover { background: #e8eaee; transform: translateY(-1px); }
+:deep(.trend-btn:hover) { background: #e8eaee; transform: translateY(-1px); }
 
 /* Center label - a bit larger */
-.trend-label {
-  min-width: 200px;
-  max-width: 360px;
+:deep(.trend-label) {
+    min-width: 0;
+    max-width: 100%;
   text-align: center;
   font-weight: 700;
   color: #222;
@@ -539,10 +527,10 @@ onMounted(async () => {
 }
 
 /* Chart wrapper: make carousel bigger */
-.chart-wrapper {
+:deep(.chart-wrapper) {
   width: 100%;
-  max-width: 680px;    /* increased width */
-  height: 220px;       /* increased height */
+    max-width: 920px;
+    height: 260px;
   box-sizing: border-box;
   border: 1px solid #eee;
   border-radius: 8px;
@@ -555,13 +543,13 @@ onMounted(async () => {
 }
 
 /* Ensure the inner echarts div fills the wrapper */
-.chart-wrapper > div {
+:deep(.chart-wrapper > div) {
   width: 100% !important;
   height: 100% !important;
 }
 
 /* Dots - larger and more visible */
-.dots {
+:deep(.dots) {
   display: flex;
   gap: 8px;
   align-items: center;
@@ -569,7 +557,7 @@ onMounted(async () => {
   margin-top: 10px;
   width: 100%;
 }
-.dot {
+:deep(.dot) {
   width: 12px;
   height: 12px;
   border-radius: 50%;
@@ -580,23 +568,23 @@ onMounted(async () => {
   opacity: 0.75;
   transition: transform .12s, opacity .12s, background .12s;
 }
-.dot.active {
+:deep(.dot.active) {
   background: #4e79a7;
   opacity: 1;
   transform: scale(1.25);
 }
 
 /* NEW: responsive layout for the two main charts */
-.analysis-toprow {
+:deep(.analysis-toprow) {
   display: flex;
   gap: 12px;
   width: 100%;
   padding: 8px;
-  box-sizing: border-box;
+  box-sizing: border-box;   
   align-items: stretch;
 }
 
-.analysis-chart {
+:deep(.analysis-chart) {
   flex: 1;
   min-width: 0;
   height: 340px; /* desktop default */
@@ -604,19 +592,44 @@ onMounted(async () => {
 
 /* stack charts on smaller screens */
 @media (max-width: 900px) {
-  .analysis-toprow {
+    :deep(.analysis-toprow) {
     flex-direction: column;
     padding: 8px 0;
   }
-  .analysis-chart {
+    :deep(.analysis-chart) {
     height: 280px;
   }
 }
 
+@media (max-width: 700px) {
+    :deep(.carousel-row) {
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+            "label label"
+            "chart chart"
+            "prev next";
+        padding: 10px 0;
+        gap: 10px;
+    }
+
+    :deep(.trend-label) {
+        font-size: 13px;
+    }
+
+    :deep(.chart-wrapper) {
+        height: 210px;
+        padding: 6px;
+    }
+}
+
 /* very small screens */
 @media (max-width: 560px) {
-  .analysis-chart {
+    :deep(.analysis-chart) {
     height: 240px;
   }
+
+    :deep(.chart-wrapper) {
+        height: 190px;
+    }
 }
 </style>
