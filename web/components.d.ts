@@ -12,9 +12,11 @@ declare module 'vue' {
     Analysis_area: typeof import('./src/components/Analysis_area.vue')['default']
     AppFooter: typeof import('./src/components/AppFooter.vue')['default']
     DashBoard: typeof import('./src/components/dashBoard.vue')['default']
+    HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
     Layout: typeof import('./src/components/Layout.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Scan: typeof import('./src/components/Scan.vue')['default']
+    Test: typeof import('./src/components/Test.vue')['default']
   }
 }
