@@ -11,6 +11,7 @@ declare module 'vue' {
     Account: typeof import('./src/components/account.vue')['default']
     Analysis_area: typeof import('./src/components/Analysis_area.vue')['default']
     AppFooter: typeof import('./src/components/AppFooter.vue')['default']
+    BillOverviewArea: typeof import('./src/components/billOverviewArea.vue')['default']
     DashBoard: typeof import('./src/components/dashBoard.vue')['default']
     Layout: typeof import('./src/components/Layout.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

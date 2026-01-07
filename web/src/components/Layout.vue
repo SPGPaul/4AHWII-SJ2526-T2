@@ -74,7 +74,7 @@
             <v-list-item-title>Beleg scannen</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <v-list-item to="/scans" class="drawer-item" @click="isMobile && (drawer = false)">
+        <v-list-item to="/billOverview" class="drawer-item" @click="isMobile && (drawer = false)">
           <v-list-item-icon class="drawer-item-icon">
             <v-icon>mdi-file-document</v-icon>
           </v-list-item-icon>
@@ -171,6 +171,10 @@ $app-title-size: 38px;
   color: $text-primary !important;
   text-align: center;
   line-height: 1.2;
+
+  :deep(*) {
+    color: $text-primary !important;
+  }
 }
 
 .top-profile-btn {
