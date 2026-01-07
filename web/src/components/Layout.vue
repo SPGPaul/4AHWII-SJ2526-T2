@@ -13,10 +13,39 @@
 
       <v-spacer></v-spacer>
 
-      <v-btn class="rounded-profile top-profile-btn" elevation="2" icon :title="'Profil'">
-        <span class="profile">P</span>
+       <!-- Avatar menu ersetzt den runden Button -->
+  <v-menu min-width="240" offset-y>
+    <template v-slot:activator="{ props }">
+      <v-btn
+        v-bind="props"
+        class="rounded-profile top-profile-btn"
+        elevation="2"
+        icon
+        :title="'Profil'"
+      >
+        <v-avatar color="black" size="40">
+          <span class="text-white profile">{{ userInitials }}</span>
+        </v-avatar>
       </v-btn>
-    </v-app-bar>
+    </template>
+
+    <v-card>
+      <v-card-text>
+        <div class="mx-auto text-center" style="width:220px">
+          <v-avatar color="black" size="56" class="mb-2">
+            <span class="text-h6 text-white">{{ userInitials }}</span>
+          </v-avatar>
+          <h3 style="margin:4px 0;">{{ userName }}</h3>
+          <p class="text-caption mt-1">{{ userEmail }}</p>
+          <v-divider class="my-3"></v-divider>
+          <v-btn to="/profil" variant="text" rounded block>Account bearbeiten</v-btn>
+          <v-divider class="my-3"></v-divider>
+          <v-btn variant="text" rounded block color="error" @click="logout">Abmelden</v-btn>
+        </div>
+      </v-card-text>
+    </v-card>
+  </v-menu>
+</v-app-bar>
 
     <v-navigation-drawer
       :app="!isMobile"
@@ -45,7 +74,7 @@
             <v-list-item-title>Beleg scannen</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <v-list-item to="/scans" class="drawer-item" @click="isMobile && (drawer = false)">
+        <v-list-item to="/billOverview" class="drawer-item" @click="isMobile && (drawer = false)">
           <v-list-item-icon class="drawer-item-icon">
             <v-icon>mdi-file-document</v-icon>
           </v-list-item-icon>
@@ -73,11 +102,28 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { loadUserData } from "@/utils/loadUser";
 
 const drawer = ref(true);
 
 const isMobile = ref(false);
 const drawerWidth = computed(() => (isMobile.value ? 280 : 120));
+
+const userName = ref("user");
+const userInitials = ref("u");
+const userEmail = ref("user@mail.com");
+
+async function loadUser() {
+    const user = await loadUserData();
+    userName.value = user?.username || "user";
+    userInitials.value = userName.value[0];
+    userEmail.value = user?.email || "user@mail.com";
+}
+
+function logout(){
+  localStorage.removeItem("token");
+  window.location.href = "/";
+}
 
 const updateIsMobile = () => {
   isMobile.value = window.matchMedia("(max-width: 700px)").matches;
@@ -87,6 +133,7 @@ const updateIsMobile = () => {
 onMounted(() => {
   updateIsMobile();
   window.addEventListener("resize", updateIsMobile);
+  loadUser();
 });
 
 onBeforeUnmount(() => {
@@ -124,6 +171,10 @@ $app-title-size: 38px;
   color: $text-primary !important;
   text-align: center;
   line-height: 1.2;
+
+  :deep(*) {
+    color: $text-primary !important;
+  }
 }
 
 .top-profile-btn {
