@@ -4,13 +4,16 @@ import BillOverviewArea from '@/components/billOverviewArea.vue'
 </script>
 
 <template>
+  <Layout>
     <v-container fluid class="pa-0">
       <v-row class="ma-0">
         <v-col cols="12" class="pa-0">
+          <br>
           <BillOverviewArea />
         </v-col>
       </v-row>
     </v-container>
+  </Layout>
 </template>
 
 <style lang="scss">

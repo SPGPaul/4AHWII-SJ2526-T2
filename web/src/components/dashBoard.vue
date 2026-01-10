@@ -307,8 +307,6 @@ onMounted(async () => {
 </script>
 
 <template>
-  <br />
-  <br />
   <div class="dashboard-root">
     <h1 class="dashboard-title">Dashboard</h1>
     <div class="dashboard-stats-row">
@@ -449,7 +447,7 @@ onMounted(async () => {
   font-size: 1.1rem;
   font-weight: 600;
   color: #fff;
-  background-color: #1976d2;
+  background-color: #4caf50;
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -460,7 +458,7 @@ onMounted(async () => {
   transition: background 0.15s;
 }
 .dashboard-scan-btn:hover {
-  background-color: #125ea7;
+  background-color: #388e3c;
 }
 
 /* Responsive styles */
