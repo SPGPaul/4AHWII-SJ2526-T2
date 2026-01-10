@@ -578,6 +578,10 @@ onMounted(async () => {
 :deep(.analysis-container) {
   background: #fff;
   color: #222;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 18px 12px;
+  box-sizing: border-box;
 }
 
 :deep(.carousel-row) {
@@ -641,8 +645,8 @@ onMounted(async () => {
 /* Chart wrapper: make carousel bigger */
 :deep(.chart-wrapper) {
   width: 100%;
-  max-width: 920px;
-  height: 260px;
+  max-width: 1200px;
+  height: min(56vh, 520px);
   box-sizing: border-box;
   border: 1px solid #eee;
   border-radius: 8px;
@@ -650,8 +654,8 @@ onMounted(async () => {
   background: #fff;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
   display: flex;
-  align-items: stretch;
-  justify-content: stretch;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Ensure the inner echarts div fills the wrapper */
@@ -689,17 +693,22 @@ onMounted(async () => {
 /* NEW: responsive layout for the two main charts */
 :deep(.analysis-toprow) {
   display: flex;
-  gap: 12px;
+  gap: 20px;
   width: 100%;
-  padding: 8px;
+  padding: 8px 4px 16px 4px;
   box-sizing: border-box;
-  align-items: stretch;
+  align-items: stretch; /* stretch charts to fill row */
+  justify-content: center; /* center the two charts */
 }
 
 :deep(.analysis-chart) {
-  flex: 1;
-  min-width: 0;
-  height: 340px; /* desktop default */
+  flex: 1 1 48%;
+  max-width: 48%;
+  min-width: 280px;
+  height: min(48vh, 440px); /* desktop default, responsive to viewport */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* stack charts on smaller screens */
