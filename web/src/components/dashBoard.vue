@@ -9,7 +9,7 @@ import {
 } from "echarts/components";
 import { UniversalTransition } from "echarts/features";
 import * as echarts from "echarts/core";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, onBeforeUnmount } from "vue";
 import { loadUserData } from "@/utils/loadUser";
 
 async function parseChartData(): Promise<any[]> {
@@ -302,13 +302,39 @@ onMounted(async () => {
       },
       title: { text: "", left: "center", top: 0 },
     });
+    // store instance and ensure it resizes when viewport or layout changes
+    (barChartDiv as any)._echartsInstance = chart;
+    // small async resize to ensure proper initial rendering
+    setTimeout(() => chart.resize(), 50);
+    // keep reference for cleanup
+    barChart = chart;
+  }
+});
+
+let barChart: any = null;
+
+const resizeHandler = () => {
+  try {
+    if (barChart && typeof barChart.resize === "function") barChart.resize();
+  } catch (e) {
+    /* ignore resize errors */
+  }
+};
+
+onMounted(() => {
+  window.addEventListener("resize", resizeHandler);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("resize", resizeHandler);
+  if (barChart && typeof barChart.dispose === "function") {
+    try { barChart.dispose(); } catch (e) {}
+    barChart = null;
   }
 });
 </script>
 
 <template>
-  <br />
-  <br />
   <div class="dashboard-root">
     <h1 class="dashboard-title">Dashboard</h1>
     <div class="dashboard-stats-row">
@@ -358,7 +384,7 @@ onMounted(async () => {
 /* filepath: c:\Users\Paul Fiala\Schule\Spengergasse\SWP\4AHWII\4AHWII-SJ2526-T2\web\src\components\dashBoard.vue */
 .dashboard-root {
   width: 100%;
-  max-width: 1100px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 32px 16px 0 16px;
   box-sizing: border-box;
@@ -397,22 +423,26 @@ onMounted(async () => {
 
 .dashboard-main-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-columns: 3fr 1fr 1fr;
   gap: 32px;
   align-items: stretch;
+  grid-auto-rows: 1fr; /* make columns equal height so side panels stretch */
   width: 100%;
 }
 
 .dashboard-bar {
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: center; /* center chart vertically */
+  align-items: center; /* center horizontally */
   min-width: 0;
 }
 
 .dashboard-bar-chart {
-  height: 260px;
+  height: 100%;
+  min-height: 300px; /* larger desktop default */
   width: 100%;
+  max-width: 100%;
   min-width: 0;
 }
 
@@ -449,7 +479,7 @@ onMounted(async () => {
   font-size: 1.1rem;
   font-weight: 600;
   color: #fff;
-  background-color: #1976d2;
+  background-color: #4caf50;
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -460,7 +490,7 @@ onMounted(async () => {
   transition: background 0.15s;
 }
 .dashboard-scan-btn:hover {
-  background-color: #125ea7;
+  background-color: #388e3c;
 }
 
 /* Responsive styles */
@@ -487,12 +517,15 @@ onMounted(async () => {
     gap: 18px;
   }
   .dashboard-bar-chart {
-    height: 180px;
-  }
-  .dashboard-count,
-  .dashboard-scan {
+    height: 100%;
+    min-height: 360px; /* larger desktop default */
+    width: 90%;
+    max-width: 100%;
     min-width: 0;
-    width: 100%;
+    margin: 0 auto;
+  }
+
+  .dashboard-count {
   }
   .dashboard-scan {
     margin-top: 10px;
@@ -514,7 +547,7 @@ onMounted(async () => {
     font-size: 1.1rem;
   }
   .dashboard-bar-chart {
-    height: 120px;
+    height: 140px;
   }
   .dashboard-receipt-label {
     font-size: 1rem;

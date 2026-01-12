@@ -13,6 +13,7 @@ declare module 'vue' {
     AppFooter: typeof import('./src/components/AppFooter.vue')['default']
     BillOverviewArea: typeof import('./src/components/billOverviewArea.vue')['default']
     DashBoard: typeof import('./src/components/dashBoard.vue')['default']
+    HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
     Layout: typeof import('./src/components/Layout.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
