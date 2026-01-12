@@ -152,18 +152,18 @@ export default {
 }
 .trans-title {
   font-weight: 700;
-  color: #0b2b18;
+  color: #f1f1f1;
   font-size: 1rem;
 }
 .trans-meta {
   font-size: 0.85rem;
-  color: #556b4a;
+  color: #ffffff;
   margin-top: 6px;
 }
 .no-data {
   padding: 28px;
   text-align: center;
-  color: #666;
+  color: #fafafa;
 }
 
 @media (max-width: 900px) {
