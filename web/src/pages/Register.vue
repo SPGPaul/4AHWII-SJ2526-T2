@@ -35,11 +35,20 @@
                 ></v-text-field>
               </v-card-item>
               <v-card-item class="align-center justify-center">
+                  class="text-black"
+                  v-model="state.password"
+                  :error-messages="v$.password.$errors.map((e) => e.$message)"
+                  label="Password"
+                  required
+                  @blur="v$.password.$touch"
+                  @input="v$.password.$touch"
+                ></v-text-field>
                 <v-text-field
                   class="text-black"
                   v-model="state.password"
                   :error-messages="v$.password.$errors.map((e) => e.$message)"
                   label="Password"
+                  type="password"
                   required
                   @blur="v$.password.$touch"
                   @input="v$.password.$touch"

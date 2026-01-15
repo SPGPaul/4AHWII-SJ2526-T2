@@ -16,6 +16,17 @@ const router = createRouter({
   },
 })
 
+// Global auth guard: redirect to login if not authenticated
+router.beforeEach((to, from, next) => {
+  const publicPages = ['/','/register','/login'];
+  const authRequired = !publicPages.includes(to.path.toLowerCase());
+  const token = localStorage.getItem('token');
+  if (authRequired && !token) {
+    return next({ path: '/' });
+  }
+  next();
+});
+
 // Workaround for https://github.com/vitejs/vite/issues/11804
 router.onError((err, to) => {
   if (err?.message?.includes?.('Failed to fetch dynamically imported module')) {
