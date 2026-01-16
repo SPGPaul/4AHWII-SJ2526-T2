@@ -2,6 +2,10 @@
   <div class="bill-overview">
     <div class="header-row">
       <h1>Rechnungsübersicht</h1>
+      
+    </div>
+
+    <v-container fluid class="cards-wrap">
       <v-text-field
         v-model="searchQuery"
         label="Suche"
@@ -10,9 +14,6 @@
         append-inner-icon="mdi-magnify"
         class="search-field"
       />
-    </div>
-
-    <v-container fluid class="cards-wrap">
       <v-row>
         <v-col
           v-for="item in filteredRechnung"
@@ -119,8 +120,9 @@ export default {
   font-weight: 700;
 }
 .search-field {
-  width: 360px;
-  max-width: 45%;
+  width: 1130px;
+  color: #0b2b18;
+  padding-bottom: 12px;
 }
 .cards-wrap {
   padding: 8px 2px;
@@ -152,7 +154,7 @@ export default {
 }
 .trans-title {
   font-weight: 700;
-  color: #0b2b18;
+  color: 000000;
   font-size: 1rem;
 }
 .trans-meta {
