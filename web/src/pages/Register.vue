@@ -1,16 +1,26 @@
 <template>
-  <div class="page-bg">
+  <div class="page-bg">7
+      <v-btn variant="circle"  color="secondary" class="backbtn">
+              <h2>
+            <v-icon>mdi-keyboard-backspace</v-icon>
+</h2>
+          </v-btn> 
     <form class="align-center jutifyy-center" @submit.prevent="handleSubmit">
+      
       <v-container class="my-5">
+        
+          
+       
         <v-row>
-          <v-col>
-            <v-card
+          <v-col class="align-top-right justify-right ">
+            
+            <v-card 
               elevation="12"
               variant="outlined"
               class="align center justify-center bg-white"
               color="black"
               min-height="250"
-            >
+            > 
               <v-card-item class="align-center justify-center">
                 <v-text-field
                   class="text-black"
@@ -36,14 +46,19 @@
               </v-card-item>
               <v-card-item class="align-center justify-center">
                 <v-text-field
-                  class="text-black"
-                  v-model="state.password"
-                  :error-messages="v$.password.$errors.map((e) => e.$message)"
-                  label="Password"
-                  required
-                  @blur="v$.password.$touch"
-                  @input="v$.password.$touch"
-                ></v-text-field>
+                      v-model="state.password"
+                      
+                      :rules="[rules.required, rules.min]"
+                      :type="show1 ? 'text' : 'password'"
+                      hint="At least 8 characters"
+                      label="Passwort"
+                      name="input-10-1"
+                      :append-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
+                      :error-messages="v$.password.$errors.map((e) => e.$message)"
+                      @click:append="show1 = !show1"  
+                      @blur="v$.password.$touch"
+                      @input="v$.password.$touch"
+                    ></v-text-field>
               </v-card-item>
               <v-card-actions class="algin-center justify-center">
                 <v-btn type="submit" class="justify-center" color="Black">
@@ -72,6 +87,7 @@ import useVuelidate from "@vuelidate/core";
 import { email, required, minLength } from "@vuelidate/validators";
 import { login } from "@/utils/auth";
 import { useRouter } from "vue-router";
+//import { V } from "dist/assets/VContainer-RfKRV4UQ";
 
 const router = useRouter();
 
@@ -184,4 +200,5 @@ async function register() {
   width: 280px;
   background-color: #ffffff;
 }
+
 </style>

@@ -4,7 +4,7 @@
     :style="{ '--drawer-width': drawerWidth + 'px' }"
   >
     <!-- top bar -->
-    <v-app-bar app class="top-bar" flat>
+    <v-app-bar app class="top-bar text-black" flat>
       <v-btn icon @click="drawer = !drawer" class="mx-2">
         <v-icon>mdi-menu</v-icon>
       </v-btn>
@@ -23,7 +23,7 @@
         icon
         :title="'Profil'"
       >
-        <v-avatar color="black" size="40">
+        <v-avatar color="green" size="40">
           <span class="text-white profile">{{ userInitials }}</span>
         </v-avatar>
       </v-btn>
@@ -32,13 +32,13 @@
     <v-card>
       <v-card-text>
         <div class="mx-auto text-center" style="width:220px">
-          <v-avatar color="black" size="56" class="mb-2">
+          <v-avatar color="green" size="56" class="mb-2">
             <span class="text-h6 text-white">{{ userInitials }}</span>
           </v-avatar>
           <h3 style="margin:4px 0;">{{ userName }}</h3>
           <p class="text-caption mt-1">{{ userEmail }}</p>
           <v-divider class="my-3"></v-divider>
-          <v-btn to="/profil" variant="text" rounded block>Account bearbeiten</v-btn>
+          <v-btn to="/profil" variant="text"  color="secondary" rounded block>Account bearbeiten</v-btn>
           <v-divider class="my-3"></v-divider>
           <v-btn variant="text" rounded block color="error" @click="logout">Abmelden</v-btn>
         </div>
@@ -142,11 +142,12 @@ onBeforeUnmount(() => {
 </script>
 
 <style lang="scss" scoped>
+  
 /* proportions and colors */
 $sidebar-bg: #a8e6b8;
 $topbar-bg: #bcefc2;
-$text-primary: #0b2b18;
-$border-dark: #222;
+$text-primary:	#28282B;
+$border-dark: #28282B;
 
 $topbar-height: 120px;
 $profile-size: 48px;
@@ -201,7 +202,7 @@ $app-title-size: 38px;
 .profile {
   font-size: 18px;
   line-height: 1;
-  color: black;
+  color: #bcefc2;
 }
 
 .left-drawer {
@@ -210,6 +211,7 @@ $app-title-size: 38px;
   padding-top: 16px;
   box-sizing: border-box;
   overflow: visible;
+  color: text-white;
   /* IMPORTANT: keine feste width hier erzwingen, sonst kollidiert es mit :width */
 }
 

@@ -35,23 +35,29 @@
                 ></v-text-field>
               </v-card-item>
               <v-card-item class="align-center justify-center">
-                <v-text-field
-                  class="text-black"
-                  v-model="state.password"
-                  :error-messages="v$.password.$errors.map((e) => e.$message)"
-                  label="Password"
-                  required
-                  @blur="v$.password.$touch"
-                  @input="v$.password.$touch"
-                ></v-text-field>
+
+                    <v-text-field
+                      v-model="state.password"
+                      
+                      :rules="[rules.required, rules.min]"
+                      :type="show1 ? 'text' : 'password'"
+                      hint="At least 8 characters"
+                      label="Passwort"
+                      name="input-10-1"
+                      :append-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
+                      :error-messages="v$.password.$errors.map((e) => e.$message)"
+                      @click:append="show1 = !show1"  
+                      @blur="v$.password.$touch"
+                      @input="v$.password.$touch"
+                    ></v-text-field>
               </v-card-item>
               <v-card-item class="align-center justify-center">
-                <v-btn type="submit" class="justify-center" color="Black"
-                  >Submit</v-btn
+                <v-btn type="submit" class="justify-center" color="white"
+                  >Submit </v-btn
                 >
               </v-card-item>
               <v-card-item class="align-center justify-center">
-                <v-btn class="justify-center" color="Black" to="/Register"
+                <v-btn class="justify-center" color="white" to="/Register" @click="Test()"
                   >Register</v-btn
                 >
               </v-card-item>
@@ -79,6 +85,7 @@ import { useVuelidate } from "@vuelidate/core";
 import { email, required } from "@vuelidate/validators";
 import { login } from "@/utils/auth";
 import { useRouter } from "vue-router";
+import { ref } from 'vue'
 
 const router = useRouter();
 
@@ -114,6 +121,7 @@ function clear() {
   }
 }
 
+
 async function loginUser() {
   try {
     const data = await login({
@@ -130,6 +138,10 @@ async function loginUser() {
     console.error("Login failed:", err.message);
   }
 }
+
+
+  const show1 = ref(false)
+  const show2 = ref(true)
 </script>
 
 <style lang="scss">

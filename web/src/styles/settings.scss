@@ -8,7 +8,10 @@
 // @use 'vuetify/settings' with (
 //   $color-pack: false
 // );
+@use 'web/src/styles/variables.scss';
 
 .v-main{
     background-color: white;
 }
+
+$color-pack: true !default;

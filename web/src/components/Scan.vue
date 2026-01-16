@@ -23,7 +23,7 @@
       <v-btn
         class="camera-button"
         @click="captureImage"
-        color="primary"
+        color="secondary"
         fab
         depressed
         dark

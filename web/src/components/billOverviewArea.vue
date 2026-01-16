@@ -25,8 +25,8 @@
           <v-card class="bill-card" elevation="2" @click="openReceipt(item)" role="button" tabindex="0">
             <v-img :src="item.img" height="160" class="bill-card-img" contain />
             <v-card-text class="bill-card-body">
-              <div class="trans-title">{{ item.transaktion }}</div>
-              <div class="trans-meta">Beleg</div>
+              <div class="trans-title text-white">{{ item.transaktion }}</div>
+              <div class="trans-meta text-white">Beleg</div>
             </v-card-text>
           </v-card>
         </v-col>

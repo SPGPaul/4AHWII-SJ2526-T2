@@ -5,14 +5,20 @@
         <v-row>
           <v-col>
             <v-card
-              variant="flat"
-              class="align-right justify-right"
-              color="white"
-              min-height="250"
+              variant= "outlined"
+              class="align-center justify-center" 
+            
+              elevation="2"
+             min-height="250"
             >
-              <v-card-item class="align-right justify-right">
+              <v-card-item class="align-center justify-center">
+              <v-responsive
+                    class="mx-auto"
+                     max-width="344"
+                            >
                 <v-text-field
-                  class="text-secondary"
+                  variant="outlined"
+                  class="text-black bg-white"
                   v-model="state.name"
                   :counter="10"
                   :error-messages="v$.name.$errors.map((e) => e.$message)"
@@ -21,10 +27,12 @@
                   @blur="v$.name.$touch"
                   @input="v$.name.$touch"
                 ></v-text-field>
+                </v-responsive>
               </v-card-item>
-              <v-card-item class="align-right justify-right">
+              <v-card-item class="align-center justify-center">
                 <v-text-field
-                  class="text-secondary"
+                variant="outlined"
+                  class="text-black bg-white"
                   v-model="state.email"
                   :error-messages="v$.email.$errors.map((e) => e.$message)"
                   label="E-mail"
@@ -33,19 +41,47 @@
                   @input="v$.email.$touch"
                 ></v-text-field>
               </v-card-item>
-              <v-card-item class="align-right justify-right">
+              <v-card-item class="align-center justify-center">
+                 
                 <v-text-field
-                  class="text-secondary"
-                  v-model="state.password"
-                  :error-messages="v$.password.$errors.map((e) => e.$message)"
-                  label="Password"
+                      v-model="state.password"
+                      class="text-black bg-white "
+                      variant="outlined"
+                      :rules="[rules.required, rules.min]"
+                      :type="show1 ? 'text' : 'password'"
+                      hint="At least 8 characters"
+                      label="Passwort"
+                      
+                      name="input-10-1"
+                    
+                      :error-messages="v$.password.$errors.map((e) => e.$message)"
+                      @click:append="show1 = !show1"  
+                      @blur="v$.password.$touch"
+                      @input="v$.password.$touch"
+                    >
+                 <v-btn class="align-right   justify-right bg-white show-btn"
+                    variant="flat">
+                    
+                      <v-icon class="align-right justify-right mr-20"> mdi-eye</v-icon>
+                      
+                    </v-btn>  
+                  </v-text-field>
+                    
+              </v-card-item>
+               <v-card-item class="align-center justify-center">
+                <v-text-field
+                variant="outlined"
+                  class="text-black bg-white"
+                  v-model="state.location"
+                  :error-messages="v$.email.$errors.map((e) => e.$message)"
+                  label="location"
                   required
-                  @blur="v$.password.$touch"
-                  @input="v$.password.$touch"
+
                 ></v-text-field>
               </v-card-item>
-              <v-card-item class="align-right justify-right">
-                <v-btn class="justify-center align-center"> Submit </v-btn>
+              
+              <v-card-item class="align-bottom justify-center">
+                <v-btn class="justify-center align-center text-black bg-white"> Submit </v-btn>
               </v-card-item>
             </v-card>
           </v-col>
@@ -64,7 +100,8 @@ const password = String;
 const initialState = {
   name: "",
   email: "",
-  password: "",
+  password: "", 
+  location:""
 };
 
 const state = reactive({
@@ -75,6 +112,7 @@ const rules = {
   name: { required },
   email: { required, email },
   password: { required, password },
+
 };
 
 const v$ = useVuelidate(rules, state);
@@ -109,11 +147,19 @@ async function fetchData() {
 <style>
 .v-card {
   margin: 300px;
+  width: 600px;
+  height: 600px;
   justify-self: center;
+  background-color:#bcefc2 ;
+  color: #bcefc2;
 }
 .v-text-field {
   width: 200px;
   justify-self: center;
   align-items: center;
+}
+.show-btn{
+  margin-right: 10px;
+  size: 50px;
 }
 </style>
