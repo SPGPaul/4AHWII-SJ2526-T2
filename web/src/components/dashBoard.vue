@@ -14,8 +14,16 @@ import { loadUserData } from "@/utils/loadUser";
 
 async function parseChartData(): Promise<any[]> {
   const data = await loadUserData();
-  const items = Array.isArray(data?.receipts) ? data.receipts : [];
-  console.log("Parsed items:", items);
+  let items = Array.isArray(data?.receipts) ? data.receipts : [];
+  // Filter to unique receipts by documentId
+  const seen = new Set();
+  items = items.filter(item => {
+    if (!item.documentId) return true;
+    if (seen.has(item.documentId)) return false;
+    seen.add(item.documentId);
+    return true;
+  });
+  console.log("Parsed unique items:", items);
   return items;
 }
 
@@ -96,6 +104,7 @@ async function getAllExpensesMonth(): Promise<number> {
       }
     }
     // round to 2 decimals
+    console.log("Expenses this month:", expensesThisMonth);
     return Math.round(expensesThisMonth * 100) / 100;
   } catch (e) {
     console.error(e);
@@ -108,6 +117,10 @@ const changeRate = ref<string>("...");
 const changeColor = ref<string>("black");
 const receiptCount = ref<number>(0);
 const barChartDiv = ref(null);
+const currentMonth = new Date().toLocaleString("de-DE", {
+  month: "long",
+  year: "numeric",
+});
 
 function formatEuro(val: number) {
   return `${val.toLocaleString("de-DE", {
@@ -339,7 +352,7 @@ onBeforeUnmount(() => {
     <h1 class="dashboard-title">Dashboard</h1>
     <div class="dashboard-stats-row">
       <div class="dashboard-total">
-        Gesamtausgaben November: {{ formatEuro(expensesThisMonth) }}
+        Gesamtausgaben {{ currentMonth }}: {{ formatEuro(expensesThisMonth) }}
       </div>
       <div class="dashboard-change" :style="{ color: changeColor }">
         {{ changeRate }}
