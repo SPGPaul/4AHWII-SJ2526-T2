@@ -8,7 +8,11 @@ import AnalysisArea from '@/components/Analysis_area.vue'
     <v-container fluid class="pa-0">
       <v-row class="ma-0">
         <v-col cols="12" class="pa-0">
-          <div style="padding-top:24px; padding-bottom:24px;">
+          <div style="padding-top:24px; padding-bottom:24px; padding-left:24px;">
+            <br>
+            <br>
+            <br>
+            <br>
             <AnalysisArea />
           </div>
         </v-col>
