@@ -9,9 +9,11 @@
         <v-icon>mdi-menu</v-icon>
       </v-btn>
 
-      <v-toolbar-title class="app-title">Rechnungsradar</v-toolbar-title>
+      <v-toolbar-title class="app-title">
+      
+        Rechnungsradar
+      </v-toolbar-title>
 
-      <v-spacer></v-spacer>
 
        <!-- Avatar menu ersetzt den runden Button -->
   <v-menu min-width="240" offset-y>

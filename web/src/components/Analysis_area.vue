@@ -76,18 +76,23 @@ async function buildCategoryTrends(items: any[], monthsCount = 3) {
 /* --- existing charts are still rendered (pie + bar) --- */
 async function renderPieChart() {
   const data = await loadUserData();
-  const items = Array.isArray(data?.receipts) ? data.receipts : [];
-
-  const dataTime = items.map((it: any) => it?.date ?? "");
-  const dataValue = items.map((it: any) => {
+  let items = Array.isArray(data?.receipts) ? data.receipts : [];
+  // Deduplicate by documentId
+  const seen = new Set();
+  items = items.filter(item => {
+    if (!item.documentId) return true;
+    if (seen.has(item.documentId)) return false;
+    seen.add(item.documentId);
+    return true;
+  });
+  // Sort by date descending and take last 7
+  items = items.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 7);
+  const displayedTimeRaw = items.map((it: any) => it?.date ?? "");
+  const displayedValue = items.map((it: any) => {
     const v = it?.amount;
     return typeof v === "number" ? v : v ? Number(v) : 0;
   });
-  const category = items.map((it: any) => it?.category ?? "Unbekannt");
-
-  const displayedTimeRaw = dataTime.slice(0, 7);
-  const displayedValue = dataValue.slice(0, 7);
-  const displayedCategory = category.slice(0, 7);
+  const displayedCategory = items.map((it: any) => it?.category ?? "Unbekannt");
   const formatDateShort = (iso: any) => {
     try {
       const d = new Date(iso);
@@ -163,16 +168,22 @@ async function renderPieChart() {
 
 async function renderBarChart() {
   const data = await loadUserData();
-  const items = Array.isArray(data?.receipts) ? data.receipts : [];
-
-  const dataTime = items.map((it: any) => it?.date ?? "");
-  const dataValue = items.map((it: any) => {
+  let items = Array.isArray(data?.receipts) ? data.receipts : [];
+  // Deduplicate by documentId
+  const seen = new Set();
+  items = items.filter(item => {
+    if (!item.documentId) return true;
+    if (seen.has(item.documentId)) return false;
+    seen.add(item.documentId);
+    return true;
+  });
+  // Sort by date descending and take last 7
+  items = items.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 7);
+  const displayedTimeRaw = items.map((it: any) => it?.date ?? "");
+  const displayedValue = items.map((it: any) => {
     const v = it?.amount;
     return typeof v === "number" ? v : v ? Number(v) : 0;
   });
-
-  const displayedTimeRaw = dataTime.slice(0, 7);
-  const displayedValue = dataValue.slice(0, 7);
 
   const formatDateShort = (iso: any) => {
     try {

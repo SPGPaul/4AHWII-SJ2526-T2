@@ -1,26 +1,16 @@
 <template class="bg-primary">
   <layout>
-    <form>
-      <v-container class="my-5">
-        <v-row>
-          <v-col>
-            <v-card
-              variant= "outlined"
-              class="align-center justify-center" 
-            
-              elevation="2"
-             min-height="250"
-            >
+    <v-container class="profile-bg-2 fill-height d-flex align-center justify-center">
+      <v-row class="justify-center align-center" style="min-height: 90vh;">
+        <v-col cols="12" sm="10" md="8" lg="6" class="d-flex justify-center align-center">
+          <v-card variant="flat" class="profile-card-large pa-10" color="white">
+            <v-card-title class="text-center profile-title mb-6">Profil</v-card-title>
+            <v-form>
               <v-card-item class="align-center justify-center">
-              <v-responsive
-                    class="mx-auto"
-                     max-width="344"
-                            >
                 <v-text-field
-                  variant="outlined"
-                  class="text-black bg-white"
+                  class="profile-input-large mb-4"
                   v-model="state.name"
-                  :counter="10"
+                  :counter="20"
                   :error-messages="v$.name.$errors.map((e) => e.$message)"
                   label="Name"
                   required
@@ -31,11 +21,10 @@
               </v-card-item>
               <v-card-item class="align-center justify-center">
                 <v-text-field
-                variant="outlined"
-                  class="text-black bg-white"
+                  class="profile-input-large mb-4"
                   v-model="state.email"
                   :error-messages="v$.email.$errors.map((e) => e.$message)"
-                  label="E-mail"
+                  label="E-Mail"
                   required
                   @blur="v$.email.$touch"
                   @input="v$.email.$touch"
@@ -43,60 +32,33 @@
                 ></v-text-field>
               </v-card-item>
               <v-card-item class="align-center justify-center">
-                 
                 <v-text-field
-                      v-model="state.password"
-                      class="text-black bg-white "
-                      variant="outlined"
-                      :rules="[rules.required, rules.min]"
-                      :type="show1 ? 'text' : 'password'"
-                      hint="At least 8 characters"
-                      label="Passwort"
-                      
-                      name="input-10-1"
-                    
-                      :error-messages="v$.password.$errors.map((e) => e.$message)"
-                      @click:append="show1 = !show1"  
-                      @blur="v$.password.$touch"
-                      @input="v$.password.$touch"
-                    >
-                    <template #append>
-                 <v-btn class="align-right   justify-right bg-white show-btn " right
-                    variant="flat">
-                    <template #prepend>
-                      <v-icon class="align-right justify-right mr-20" right> mdi-eye</v-icon>
-                      </template>  
-                    </v-btn>
-                    </template>
-                  </v-text-field> 
-                    
-              </v-card-item>
-               <v-card-item class="align-center justify-center">
-                <v-text-field
-                variant="outlined"
-                  class="text-black bg-white"
-                  v-model="state.location"
-                  :error-messages="v$.email.$errors.map((e) => e.$message)"
-                  label="location"
+                  class="profile-input-large mb-5"
+                  v-model="state.password"
+                  :error-messages="v$.password.$errors.map((e) => e.$message)"
+                  label="Passwort"
+                  type="password"
                   required
 
                 ></v-text-field>
               </v-card-item>
-              
-              <v-card-item class="align-bottom justify-center">
-                <v-btn class="justify-center align-center text-black bg-white"> Submit </v-btn>
+              <v-card-item class="align-center justify-center">
+                <v-btn color="primary" class="profile-btn-large">Speichern</v-btn>
               </v-card-item>
-            </v-card>
-          </v-col>
-        </v-row>
-      </v-container>
-    </form>
+            </v-form>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
   </layout>
 </template>
 <script setup>
-import { reactive } from "vue";
-import { useVuelidate } from "@vuelidate/core";
-import { email, required } from "@vuelidate/validators";
+
+
+import useVuelidate from '@vuelidate/core';
+import { required, email } from '@vuelidate/validators';
+import { reactive, onMounted } from 'vue';
+import { loadUserData } from '@/utils/loadUser';
 
 const password = String;
 
@@ -109,6 +71,21 @@ const initialState = {
 
 const state = reactive({
   ...initialState,
+});
+
+// Prefill form with user data on mount
+onMounted(async () => {
+  try {
+    const user = await loadUserData();
+    if (user) {
+      state.name = user.username || user.name || "";
+      state.email = user.email || "";
+      // Never prefill password for security reasons
+    }
+  } catch (e) {
+    // Optionally handle error
+    console.error("Failed to load user data", e);
+  }
 });
 
 const rules = {
@@ -148,18 +125,102 @@ async function fetchData() {
 </script>
 
 <style>
-.v-card {
-  margin: 300px;
-  width: 600px;
-  height: 600px;
-  justify-self: center;
-  background-color:#bcefc2 ;
-  color: #bcefc2;
-}
-.v-text-field {
-  width: 200px;
-  justify-self: center;
+.profile-bg-2 {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f8fafc 0%, #e0f7fa 100%);
+  display: flex;
   align-items: center;
+  justify-content: center;
+}
+.profile-card-large {
+  max-width: 700px;
+  width: 100%;
+  min-height: 500px;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(80, 200, 180, 0.12);
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.profile-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #1976d2;
+  letter-spacing: 1px;
+}
+.profile-input-large {
+  width: 350px;
+  background: #f8fafc;
+  border-radius: 8px;
+  font-size: 1.15rem;
+  padding: 10px 0;
+  box-shadow: none !important;
+}
+.profile-btn-large {
+  min-width: 180px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  border-radius: 8px;
+  margin-top: 12px;
+  padding: 12px 0;
+}
+.profile-bg-centered {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f8fafc 0%, #e0f7fa 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.profile-card-centered {
+  border-radius: 14px;
+  box-shadow: 0 4px 18px rgba(80, 200, 180, 0.10);
+  background: #fff;
+  padding: 24px 18px 18px 18px;
+  margin: 0 auto;
+}
+.profile-title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #1976d2;
+  letter-spacing: 0.5px;
+}
+.profile-input {
+  width: 220px;
+  background: #f8fafc;
+  border-radius: 6px;
+}
+.profile-btn-centered {
+  min-width: 120px;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 6px;
+  margin-top: 6px;
+}
+.profile-card {
+  border-radius: 14px;
+  box-shadow: 0 4px 18px rgba(80, 200, 180, 0.10);
+  background: #fff;
+  padding: 24px 18px 18px 18px;
+}
+.profile-title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #1976d2;
+  letter-spacing: 0.5px;
+}
+.profile-input {
+  width: 220px;
+  background: #f8fafc;
+  border-radius: 6px;
+}
+.profile-btn {
+  min-width: 120px;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 6px;
+  margin-top: 6px;
 }
 .show-btn{
   margin-right: 10px;

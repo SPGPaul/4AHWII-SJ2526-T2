@@ -45,20 +45,24 @@
                 ></v-text-field>
               </v-card-item>
               <v-card-item class="align-center justify-center">
+                  class="text-black"
+                  v-model="state.password"
+                  :error-messages="v$.password.$errors.map((e) => e.$message)"
+                  label="Password"
+                  required
+                  @blur="v$.password.$touch"
+                  @input="v$.password.$touch"
+                ></v-text-field>
                 <v-text-field
-                      v-model="state.password"
-                      
-                      :rules="[rules.required, rules.min]"
-                      :type="show1 ? 'text' : 'password'"
-                      hint="At least 8 characters"
-                      label="Passwort"
-                      name="input-10-1"
-                      :append-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
-                      :error-messages="v$.password.$errors.map((e) => e.$message)"
-                      @click:append="show1 = !show1"  
-                      @blur="v$.password.$touch"
-                      @input="v$.password.$touch"
-                    ></v-text-field>
+                  class="text-black"
+                  v-model="state.password"
+                  :error-messages="v$.password.$errors.map((e) => e.$message)"
+                  label="Password"
+                  type="password"
+                  required
+                  @blur="v$.password.$touch"
+                  @input="v$.password.$touch"
+                ></v-text-field>
               </v-card-item>
               <v-card-actions class="algin-center justify-center">
                 <v-btn type="submit" class="justify-center" color="Black">

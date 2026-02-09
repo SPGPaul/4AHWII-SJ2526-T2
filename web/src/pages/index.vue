@@ -14,21 +14,9 @@
               <v-card-item class="align-center justify-center">
                 <v-text-field
                   class="text-black"
-                  v-model="state.name"
-                  :counter="10"
-                  :error-messages="v$.name.$errors.map((e) => e.$message)"
-                  label="Name"
-                  required
-                  @blur="v$.name.$touch"
-                  @input="v$.name.$touch"
-                ></v-text-field>
-              </v-card-item>
-              <v-card-item class="align-center justify-center">
-                <v-text-field
-                  class="text-black"
                   v-model="state.email"
                   :error-messages="v$.email.$errors.map((e) => e.$message)"
-                  label="E-mail"
+                  label="E-Mail"
                   required
                   @blur="v$.email.$touch"
                   @input="v$.email.$touch"
@@ -36,21 +24,16 @@
                 ></v-text-field>
               </v-card-item>
               <v-card-item class="align-center justify-center">
-
-                    <v-text-field
-                      v-model="state.password"
-                      
-                      :rules="[rules.required, rules.min]"
-                      :type="show1 ? 'text' : 'password'"
-                      hint="At least 8 characters"
-                      label="Passwort"
-                      name="input-10-1"
-                      :append-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
-                      :error-messages="v$.password.$errors.map((e) => e.$message)"
-                      @click:append="show1 = !show1"  
-                      @blur="v$.password.$touch"
-                      @input="v$.password.$touch"
-                    ></v-text-field>
+                <v-text-field
+                  class="text-black"
+                  v-model="state.password"
+                  :error-messages="v$.password.$errors.map((e) => e.$message)"
+                  label="Password"
+                  type="password"
+                  required
+                  @blur="v$.password.$touch"
+                  @input="v$.password.$touch"
+                ></v-text-field>
               </v-card-item>
               <v-card-item class="align-center justify-center">
                 <v-btn type="submit" class="justify-center" color="white"
@@ -81,6 +64,7 @@
   </div>
 </template>
 <script setup>
+
 import { reactive } from "vue";
 import { useVuelidate } from "@vuelidate/core";
 import { email, required } from "@vuelidate/validators";
@@ -89,23 +73,17 @@ import { useRouter } from "vue-router";
 import { ref } from 'vue'
 
 const router = useRouter();
-
 const initialState = {
-  name: "",
   email: "",
   password: "",
 };
-
 const state = reactive({
   ...initialState,
 });
-
 const rules = {
-  name: { required },
   email: { required, email },
   password: { required },
 };
-
 const v$ = useVuelidate(rules, state);
 
 async function handleSubmit() {
