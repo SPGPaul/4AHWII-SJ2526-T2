@@ -1,12 +1,11 @@
 <template>
-  <div class="page-bg">7
-      <v-btn variant="circle"  color="secondary" class="backbtn">
+  <div class="page-bg">
+    <form class="align-center jutifyy-center" @submit.prevent="handleSubmit">
+       <v-btn variant="circle"  color="secondary" class="backbtn">
               <h2>
             <v-icon>mdi-keyboard-backspace</v-icon>
 </h2>
-          </v-btn> 
-    <form class="align-center jutifyy-center" @submit.prevent="handleSubmit">
-      
+          </v-btn>  
       <v-container class="my-5">
         
           
@@ -42,6 +41,7 @@
                   required
                   @blur="v$.email.$touch"
                   @input="v$.email.$touch"
+                  pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$"
                 ></v-text-field>
               </v-card-item>
               <v-card-item class="align-center justify-center">

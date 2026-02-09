@@ -39,6 +39,7 @@
                   required
                   @blur="v$.email.$touch"
                   @input="v$.email.$touch"
+                  pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$"
                 ></v-text-field>
               </v-card-item>
               <v-card-item class="align-center justify-center">
@@ -59,13 +60,15 @@
                       @blur="v$.password.$touch"
                       @input="v$.password.$touch"
                     >
-                 <v-btn class="align-right   justify-right bg-white show-btn"
+                    <template #append>
+                 <v-btn class="align-right   justify-right bg-white show-btn " right
                     variant="flat">
-                    
-                      <v-icon class="align-right justify-right mr-20"> mdi-eye</v-icon>
-                      
-                    </v-btn>  
-                  </v-text-field>
+                    <template #prepend>
+                      <v-icon class="align-right justify-right mr-20" right> mdi-eye</v-icon>
+                      </template>  
+                    </v-btn>
+                    </template>
+                  </v-text-field> 
                     
               </v-card-item>
                <v-card-item class="align-center justify-center">

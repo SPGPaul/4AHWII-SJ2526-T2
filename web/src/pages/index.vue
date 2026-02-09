@@ -32,6 +32,7 @@
                   required
                   @blur="v$.email.$touch"
                   @input="v$.email.$touch"
+                  pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$"
                 ></v-text-field>
               </v-card-item>
               <v-card-item class="align-center justify-center">
