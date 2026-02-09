@@ -17,6 +17,7 @@
                   @blur="v$.name.$touch"
                   @input="v$.name.$touch"
                 ></v-text-field>
+                </v-responsive>
               </v-card-item>
               <v-card-item class="align-center justify-center">
                 <v-text-field
@@ -27,6 +28,7 @@
                   required
                   @blur="v$.email.$touch"
                   @input="v$.email.$touch"
+                  pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$"
                 ></v-text-field>
               </v-card-item>
               <v-card-item class="align-center justify-center">
@@ -37,8 +39,7 @@
                   label="Passwort"
                   type="password"
                   required
-                  @blur="v$.password.$touch"
-                  @input="v$.password.$touch"
+
                 ></v-text-field>
               </v-card-item>
               <v-card-item class="align-center justify-center">
@@ -64,7 +65,8 @@ const password = String;
 const initialState = {
   name: "",
   email: "",
-  password: "",
+  password: "", 
+  location:""
 };
 
 const state = reactive({
@@ -90,6 +92,7 @@ const rules = {
   name: { required },
   email: { required, email },
   password: { required, password },
+
 };
 
 const v$ = useVuelidate(rules, state);
@@ -218,5 +221,9 @@ async function fetchData() {
   font-weight: 500;
   border-radius: 6px;
   margin-top: 6px;
+}
+.show-btn{
+  margin-right: 10px;
+  size: 50px;
 }
 </style>

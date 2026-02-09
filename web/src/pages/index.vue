@@ -20,6 +20,7 @@
                   required
                   @blur="v$.email.$touch"
                   @input="v$.email.$touch"
+                  pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$"
                 ></v-text-field>
               </v-card-item>
               <v-card-item class="align-center justify-center">
@@ -35,12 +36,12 @@
                 ></v-text-field>
               </v-card-item>
               <v-card-item class="align-center justify-center">
-                <v-btn type="submit" class="justify-center" color="Black"
-                  >Submit</v-btn
+                <v-btn type="submit" class="justify-center" color="white"
+                  >Submit </v-btn
                 >
               </v-card-item>
               <v-card-item class="align-center justify-center">
-                <v-btn class="justify-center" color="Black" to="/Register"
+                <v-btn class="justify-center" color="white" to="/Register" @click="Test()"
                   >Register</v-btn
                 >
               </v-card-item>
@@ -69,6 +70,7 @@ import { useVuelidate } from "@vuelidate/core";
 import { email, required } from "@vuelidate/validators";
 import { login } from "@/utils/auth";
 import { useRouter } from "vue-router";
+import { ref } from 'vue'
 
 const router = useRouter();
 const initialState = {
@@ -98,6 +100,7 @@ function clear() {
   }
 }
 
+
 async function loginUser() {
   try {
     const data = await login({
@@ -114,6 +117,10 @@ async function loginUser() {
     console.error("Login failed:", err.message);
   }
 }
+
+
+  const show1 = ref(false)
+  const show2 = ref(true)
 </script>
 
 <style lang="scss">
