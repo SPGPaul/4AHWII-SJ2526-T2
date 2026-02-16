@@ -16,17 +16,19 @@
       <v-row>
         <v-col
           v-for="item in filteredRechnung"
-          :key="item.img + item.transaktion"
-          cols="12"
-          sm="6"
-          md="4"
-          lg="3"
+          :key="item.id"
+          cols="12" sm="6" md="4" lg="3"
         >
           <v-card class="bill-card" elevation="2" @click="openReceipt(item)" role="button" tabindex="0">
             <v-img :src="item.img" height="160" class="bill-card-img" contain />
             <v-card-text class="bill-card-body">
               <div class="trans-title">{{ item.transaktion }}</div>
-              <div class="trans-meta">Beleg</div>
+              <div class="trans-description">
+                 {{ item.description || 'Keine Beschreibung' }}
+              </div>
+              <!-- hier können beliebig weitere Felder eingebaut werden: -->
+              <div class="trans-meta">Betrag: {{ item.betrag }} €</div>
+              <div class="trans-meta">Datum: {{ item.datum }}</div>
             </v-card-text>
           </v-card>
         </v-col>
@@ -61,38 +63,80 @@ export default {
       searchQuery: "",
       dialog: false,
       selected: null,
-      desserts: [
-        {
-          img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp",
-          transaktion: "AMZ - GGL",
-        },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 237 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 262 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 305 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 356 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 375 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 392 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 408 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 452 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 518 },
-      ],
+      receipts: [],
+      loading: false,
+      token: "54a258000325fcbff04e65b292fecd2ca70258552324762fd2520e1932269765803183eb47586c2203f12b3abd7c7dbbe3dffe729c8334508eeba14656a85aa5bb7441ec939788a76a8a7e6066b1973362e5cdb6770a50dbecf0d74a4bcebe7c650eb54f08b757e0770003032e5817aa26dc6664c373e2c2e8667888d2d3f2c1",
     };
+  },
+  async mounted() {
+    await this.fetchReceipts();
   },
   computed: {
     filteredRechnung() {
-      if (!this.searchQuery) return this.desserts;
-      return this.desserts.filter((item) =>
-        item.transaktion.toString().toLowerCase().includes(this.searchQuery.toLowerCase())
+      if (!this.searchQuery) return this.receipts;
+      return this.receipts.filter((item) =>
+        (item.transaktion || "").toString().toLowerCase()
+          .includes(this.searchQuery.toLowerCase())
       );
     },
   },
   methods: {
+    async fetchReceipts() {
+      this.loading = true;
+      try {
+        const apiUrl = "https://elegant-eggs-b247740f2b.strapiapp.com/api/Receipts?populate=*";
+        const response = await fetch(apiUrl, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log("Receipts von API:", data);
+
+        // Alle Receipts mit Bildern formatieren
+        this.receipts = data.data
+          .filter((receipt) => receipt.attributes) // Nur Receipts mit attributes
+          .map((receipt) => {
+            // picture ist direkt die Datei, nicht verschachtelt
+            const imageUrl = receipt.attributes.picture?.url;
+            console.log("ImageURL für ID", receipt.id, ":", imageUrl);
+            
+            const fullImageUrl = imageUrl
+              ? `https://elegant-eggs-b247740f2b.strapiapp.com${imageUrl}`
+              : null;
+
+            return {
+              id: receipt.id,
+              transaktion: receipt.attributes.transaktion || "Beleg",
+              img: fullImageUrl || "https://via.placeholder.com/300x400?text=Kein+Bild",
+              ...receipt.attributes,
+            };
+          });
+        
+        console.log("Formatierte Receipts:", this.receipts);
+
+        console.log("Formatierte Receipts:", this.receipts);
+      } catch (error) {
+        console.error("Fehler beim Laden der Belege:", error);
+      } finally {
+        this.loading = false;
+      }
+    },
     openReceipt(item) {
       this.selected = item;
       this.dialog = true;
     },
   },
+  
 };
+
 </script>
 
 <style scoped>
@@ -159,6 +203,17 @@ export default {
   font-size: 0.85rem;
   color: #ffffff;
   margin-top: 6px;
+}
+.trans-description {
+  font-size: 0.8rem;
+  color: #d0d0d0;
+  margin-top: 8px;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 .no-data {
   padding: 28px;
