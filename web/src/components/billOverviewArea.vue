@@ -56,6 +56,36 @@
 </template>
 
 <script>
+import { loadUserData } from "@/utils/loadUser";
+
+const API_BASE = "https://elegant-eggs-b247740f2b.strapiapp.com";
+const PLACEHOLDER_IMG = "https://via.placeholder.com/300x400?text=Kein+Bild";
+
+function normalizeUrl(url) {
+  if (!url) return null;
+  return url.startsWith("http")
+    ? url
+    : `${API_BASE}${url.startsWith("/") ? "" : "/"}${url}`;
+}
+
+function pickImageUrl(attrs) {
+  const candidate =
+    attrs?.picture?.url ||
+    attrs?.image?.url ||
+    attrs?.file?.url ||
+    attrs?.picture?.data?.attributes?.url ||
+    attrs?.image?.data?.attributes?.url ||
+    attrs?.file?.data?.attributes?.url ||
+    attrs?.picture?.formats?.thumbnail?.url ||
+    attrs?.image?.formats?.thumbnail?.url ||
+    attrs?.file?.formats?.thumbnail?.url ||
+    attrs?.picture?.data?.attributes?.formats?.thumbnail?.url ||
+    attrs?.image?.data?.attributes?.formats?.thumbnail?.url ||
+    attrs?.file?.data?.attributes?.formats?.thumbnail?.url ||
+    null;
+
+  return normalizeUrl(candidate) || PLACEHOLDER_IMG;
+}
 export default {
   name: "BillOverviewArea",
   data() {
@@ -65,7 +95,6 @@ export default {
       selected: null,
       receipts: [],
       loading: false,
-      token: "54a258000325fcbff04e65b292fecd2ca70258552324762fd2520e1932269765803183eb47586c2203f12b3abd7c7dbbe3dffe729c8334508eeba14656a85aa5bb7441ec939788a76a8a7e6066b1973362e5cdb6770a50dbecf0d74a4bcebe7c650eb54f08b757e0770003032e5817aa26dc6664c373e2c2e8667888d2d3f2c1",
     };
   },
   async mounted() {
@@ -84,47 +113,26 @@ export default {
     async fetchReceipts() {
       this.loading = true;
       try {
-        const apiUrl = "https://elegant-eggs-b247740f2b.strapiapp.com/api/Receipts?populate=*";
-        const response = await fetch(apiUrl, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${this.token}`,
-            "Content-Type": "application/json",
-          },
+        const data = await loadUserData();
+        const items = Array.isArray(data?.receipts) ? data.receipts : [];
+
+        this.receipts = items.map((receipt, index) => {
+          const attrs = receipt?.attributes ?? receipt ?? {};
+          const imgUrl = pickImageUrl(attrs);
+
+          return {
+            id: receipt?.id ?? receipt?.documentId ?? index,
+            transaktion: attrs.transaktion || attrs.title || attrs.name || "Beleg",
+            description: attrs.description || attrs.desc || "",
+            betrag: attrs.betrag ?? attrs.amount ?? attrs.total ?? "",
+            datum: attrs.datum ?? attrs.date ?? attrs.createdAt ?? "",
+            img: imgUrl,
+            raw: receipt,
+          };
         });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log("Receipts von API:", data);
-
-        // Alle Receipts mit Bildern formatieren
-        this.receipts = data.data
-          .filter((receipt) => receipt.attributes) // Nur Receipts mit attributes
-          .map((receipt) => {
-            // picture ist direkt die Datei, nicht verschachtelt
-            const imageUrl = receipt.attributes.picture?.url;
-            console.log("ImageURL für ID", receipt.id, ":", imageUrl);
-            
-            const fullImageUrl = imageUrl
-              ? `https://elegant-eggs-b247740f2b.strapiapp.com${imageUrl}`
-              : null;
-
-            return {
-              id: receipt.id,
-              transaktion: receipt.attributes.transaktion || "Beleg",
-              img: fullImageUrl || "https://via.placeholder.com/300x400?text=Kein+Bild",
-              ...receipt.attributes,
-            };
-          });
-        
-        console.log("Formatierte Receipts:", this.receipts);
-
-        console.log("Formatierte Receipts:", this.receipts);
       } catch (error) {
         console.error("Fehler beim Laden der Belege:", error);
+        this.receipts = [];
       } finally {
         this.loading = false;
       }

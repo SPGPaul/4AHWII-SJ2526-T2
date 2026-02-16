@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Layout from '@/components/Layout.vue'
-import billOverviewArea from '@/components/billOverviewArea.vue'
+import BillOverviewArea from '@/components/billOverviewArea.vue'
 </script>
 
 <template>
