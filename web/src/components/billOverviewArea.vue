@@ -22,13 +22,13 @@
           <v-card class="bill-card" elevation="2" @click="openReceipt(item)" role="button" tabindex="0">
             <v-img :src="item.img" height="160" class="bill-card-img" contain />
             <v-card-text class="bill-card-body">
-              <div class="trans-title">{{ item.transaktion }}</div>
-              <div class="trans-description">
-                 {{ item.description || 'Keine Beschreibung' }}
-              </div>
+              <div class="trans-title">{{ item.description || 'Keine Beschreibung'}}</div>
+             
               <!-- hier können beliebig weitere Felder eingebaut werden: -->
               <div class="trans-meta">Betrag: {{ item.betrag }} €</div>
-              <div class="trans-meta">Datum: {{ item.datum }}</div>
+              <div class="trans-meta">
+                Datum: {{ new Date(item.datum).toLocaleDateString("de-DE") }}
+              </div>
             </v-card-text>
           </v-card>
         </v-col>
