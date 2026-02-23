@@ -61,36 +61,66 @@ export default {
       searchQuery: "",
       dialog: false,
       selected: null,
-      desserts: [
-        {
-          img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp",
-          transaktion: "AMZ - GGL",
-        },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 237 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 262 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 305 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 356 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 375 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 392 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 408 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 452 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 518 },
-      ],
+      bills: [],
+      loading: false,
+      error: null,
     };
   },
   computed: {
     filteredRechnung() {
-      if (!this.searchQuery) return this.desserts;
-      return this.desserts.filter((item) =>
-        item.transaktion.toString().toLowerCase().includes(this.searchQuery.toLowerCase())
+      if (!this.searchQuery) return this.bills;
+      return this.bills.filter((item) =>
+        item.transaktion?.toString().toLowerCase().includes(this.searchQuery.toLowerCase())
       );
     },
   },
   methods: {
+    async fetchBills() {
+      this.loading = true;
+      this.error = null;
+      try {
+        // Nutze loadUserData wie in Analysis_area.vue
+        const { loadUserData } = await import('@/utils/loadUser');
+        const data = await loadUserData();
+        let items = Array.isArray(data?.receipts) ? data.receipts : [];
+        // Doppelte filtern
+        const seen = new Set();
+        items = items.filter(item => {
+          if (!item.documentId) return true;
+          if (seen.has(item.documentId)) return false;
+          seen.add(item.documentId);
+          return true;
+        });
+        // Mapping für img
+        const baseUrl = "https://elegant-eggs-b247740f2b.strapiapp.com";
+        this.bills = items.map(item => {
+          let imgSrc = '';
+          if (item.img) {
+            if (typeof item.img === 'string') {
+              imgSrc = item.img.startsWith('http') ? item.img : `${baseUrl}${item.img}`;
+            } else if (typeof item.img === 'object' && item.img.url) {
+              imgSrc = item.img.url.startsWith('http') ? item.img.url : `${baseUrl}${item.img.url}`;
+            }
+          }
+          return {
+            img: imgSrc,
+            transaktion: item.transaktion || item.title || '',
+            documentId: item.documentId || null
+          };
+        });
+      } catch (e) {
+        this.error = e.message || "Fehler beim Laden der Rechnungen.";
+      } finally {
+        this.loading = false;
+      }
+    },
     openReceipt(item) {
       this.selected = item;
       this.dialog = true;
     },
+  },
+  mounted() {
+    this.fetchBills();
   },
 };
 </script>
