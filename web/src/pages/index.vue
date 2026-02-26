@@ -1,70 +1,43 @@
 <template>
   <div class="page-bg">
-      <div class="bg-layer"></div>
+    <div class="bg-layer"></div>
     <form class="align-center jutifyy-center" @submit.prevent="handleSubmit">
       <v-container class="my-5">
         <v-row>
           <v-col>
-            <v-card
-              elevation="12"
-              width="350"
-              class="align-center justify-center bg-white"
-              color="#bcefc2"
-              min-height="250"
-              rounded
-            >
-            <v-card-title class="d-flex align-center justify-center">
-  <span class="pr-20">Rechnungsradar</span>
+            <v-card elevation="12" width="350" class="align-center justify-center bg-white" color="#bcefc2"
+              min-height="250" rounded>
+              <v-card-title class="d-flex align-center justify-center">
+                <span class="pr-20">Rechnungsradar</span>
 
-  <v-img
-    src="@/assets/RechnungsradarLogo.png"
-  max-width="50"
-    contain
-    class="ml-3"
-  ></v-img>
-  
-</v-card-title>
- <v-divider class="my-1 "></v-divider>
- 
+                <v-img src="@/assets/RechnungsradarLogo.png" max-width="50" contain class="ml-3"></v-img>
+
+              </v-card-title>
+              <v-divider class="my-1 "></v-divider>
+
 
               <v-card-item class="align-center justify-center">
-                <v-text-field
-                  class="text-black mb-2"
-                  variant="outlined"
-                  v-model="state.email"
-                  :error-messages="v$.email.$errors.map((e) => e.$message)"
-                  label="E-Mail"
-                  required
-                  @blur="v$.email.$touch"
-                  @input="v$.email.$touch"
-                  pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$"
-                  width="250"
-                ></v-text-field>
+                <v-text-field class="text-black mb-1 my-2" variant="outlined" v-model="state.email"
+                  :error-messages="v$.email.$errors.map((e) => e.$message)" label="E-Mail" required
+                  @blur="v$.email.$touch" @input="v$.email.$touch" pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$"
+                  width="250"></v-text-field>
               </v-card-item>
               <v-card-item class="align-center justify-center my-0">
-                <v-text-field
-                  label="Password"
-                  v-model="state.password"
-                  :error-messages="v$.password.$errors.map((e) => e.$message)"
-                  type="password"
-                    variant="outlined"
-                    class="mb-1 text-black"
-                  required
-                  @blur="v$.password.$touch"
-                  @input="v$.password.$touch"
-                  width="250"
-                ></v-text-field>
+                <v-text-field label="Password" v-model="state.password"
+                  :error-messages="v$.password.$errors.map((e) => e.$message)" :type="show1 ? 'text' : 'password'"
+                  variant="outlined" class="mb-1 text-black my-2" required @blur="v$.password.$touch"
+                  @input="v$.password.$touch" width="250" :append-inner-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
+                  @click:append-inner="show1 = !show1" />
+
               </v-card-item>
               <v-card-item class="align-center justify-center" rounded flat>
-                <v-btn type="submit" class="justify-center login mb-1" rounded block outlined width="250" color="#f2fbf6"
-                  >Login </v-btn
-                >
+                <v-btn type="submit" class="justify-center login mb-1" rounded block outlined width="250"
+                  color="#f2fbf6">Login </v-btn>
               </v-card-item>
               <v-card-item class="align-center justify-center " rounded flat>
-            
-                <v-btn class="justify-center mb-1" color="white" to="/Register" flat  @click="Test()"
-                  > Don't have an Account? Register</v-btn
-                >
+
+                <v-btn class="justify-center mb-1" color="white" to="Register" flat @click="Test()"> Don't have an
+                  Account? Register</v-btn>
               </v-card-item>
             </v-card>
           </v-col>
@@ -75,11 +48,7 @@
     <!-- dekorative weiße Welle -->
     <div class="wave" aria-hidden>
       <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
-        <path
-          d="M0,0 C300,100 900,100 1200,0 L1200,120 L0,120 Z"
-          fill="#ffffff"
-          opacity="0.9"
-        ></path>
+        <path d="M0,0 C300,100 900,100 1200,0 L1200,120 L0,120 Z" fill="#ffffff" opacity="0.9"></path>
       </svg>
     </div>
   </div>
@@ -140,8 +109,8 @@ async function loginUser() {
 }
 
 
-  const show1 = ref(false)
-  const show2 = ref(true)
+const show1 = ref(false)
+const show2 = ref(true)
 </script>
 
 <style lang="scss">
@@ -153,13 +122,11 @@ async function loginUser() {
   position: relative;
   overflow: hidden;
 
-  background: linear-gradient(
-    135deg,
-    hsl(145, 60%, 94%) 0%,
-    hsl(150, 55%, 80%) 40%,
-    hsl(160, 55%, 70%) 70%,
-    hsl(170, 60%, 60%) 100%
-  );
+  background: linear-gradient(135deg,
+      hsl(145, 60%, 94%) 0%,
+      hsl(150, 55%, 80%) 40%,
+      hsl(160, 55%, 70%) 70%,
+      hsl(170, 60%, 60%) 100%);
 
   background-size: 200% 200%;
   animation: gradientBreathing 25s ease-in-out infinite alternate;
@@ -175,11 +142,11 @@ async function loginUser() {
   width: 850px;
   height: 850px;
   border-radius: 50%;
-  filter: blur(140px);
+  filter: blur(80px);
   opacity: 0.85;
   z-index: 0;
 
-  animation: hueShift 35s ease-in-out infinite alternate;
+  animation: hueShift 25s ease-in-out infinite alternate;
 }
 
 /* obere linke Fläche */
@@ -201,7 +168,7 @@ async function loginUser() {
 .page-bg .bg-layer {
   width: 950px;
   height: 950px;
-  background: hsl(160, 60%, 75%);
+  background: hsl(160, 58%, 50%);
   top: 15%;
   left: 35%;
   animation-delay: 18s;
@@ -213,6 +180,7 @@ async function loginUser() {
   0% {
     background-position: 0% 50%;
   }
+
   100% {
     background-position: 100% 50%;
   }
@@ -222,14 +190,25 @@ async function loginUser() {
 
 @keyframes hueShift {
   0% {
-    filter: blur(140px) hue-rotate(0deg);
+    filter: blur(80px) hue-rotate(0deg);
   }
+
   50% {
-    filter: blur(140px) hue-rotate(15deg);
+    filter: blur(60px) hue-rotate(15deg);
   }
+
   100% {
-    filter: blur(140px) hue-rotate(-10deg);
+    filter: blur(40px) hue-rotate(-10deg);
   }
+}
+
+.v-field__append-inner {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.v-field__append-inner:hover {
+  transform: scale(1.1);
 }
 
 
@@ -258,11 +237,9 @@ async function loginUser() {
   letter-spacing: 0.5px;
   ;
 
-  background: linear-gradient(
-    135deg,
-    #a8e6b8,
-    #7fd8a3
-  );
+  background: linear-gradient(135deg,
+      #a8e6b8,
+      #7fd8a3);
 
   color: #f2fbf6;
   box-shadow: 0 8px 20px rgba(127, 216, 163, 0.35);
@@ -271,13 +248,12 @@ async function loginUser() {
 }
 
 .login-btn:hover {
- border-radius: 12px;
+  border-radius: 12px;
   transform: translateY(-2px);
- 
+
 }
 
 .v-btn:hover {
   transform: translateY(-1px);
 }
-
 </style>

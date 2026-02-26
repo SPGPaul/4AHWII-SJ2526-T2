@@ -1,181 +1,101 @@
-<<template>
-  <v-app
-    :class="{ 'is-mobile': isMobile }"
-    :style="{ '--drawer-width': drawerWidth + 'px' }"
-  >
-    <!-- top bar -->
-    <v-app-bar app class="top-bar text-black" flat>
-      <v-btn icon @click="drawer = !drawer" class="mx-2">
-        <v-icon>mdi-menu</v-icon>
-      </v-btn>
-
-      <v-toolbar-title class="app-title">
-      
-        Rechnungsradar
-      </v-toolbar-title>
-
-
-       <!-- Avatar menu ersetzt den runden Button -->
-  <v-menu min-width="240" offset-y>
-    <template v-slot:activator="{ props }">
-      <v-btn
-        v-bind="props"
-        class="rounded-profile top-profile-btn"
-        elevation="2"
-        icon
-        :title="'Profil'"
-      >
-        <v-avatar color="green" size="40">
-          <span class="text-white profile">{{ userInitials }}</span>
-        </v-avatar>
-      </v-btn>
-    </template>
-
-    <v-card>
-      <v-card-text>
-        <div class="mx-auto text-center" style="width:220px">
-          <v-avatar color="green" size="56" class="mb-2">
-            <span class="text-h6 text-white">{{ userInitials }}</span>
-          </v-avatar>
-          <h3 style="margin:4px 0;">{{ userName }}</h3>
-          <p class="text-caption mt-1">{{ userEmail }}</p>
-          <v-divider class="my-3"></v-divider>
-          <v-btn to="/profil" variant="text"  color="secondary" rounded block>Account bearbeiten</v-btn>
-          <v-divider class="my-3"></v-divider>
-          <v-btn variant="text" rounded block color="error" @click="logout">Abmelden</v-btn>
-        </div>
-      </v-card-text>
-    </v-card>
-  </v-menu>
-  
-</v-app-bar>
- <v-layout>
-    <v-navigation-drawer
-      :app="!isMobile"
-      v-model="drawer"
-      class="left-drawer sidebar"
-      :permanent="!isMobile"
-      :temporary="isMobile"
-      :width="drawerWidth"
-      
-    >
-      <v-list dense nav class="drawer-list">
-        <br>
-        <br></br>
-        <v-list-item to="/dashboard" class="drawer-item" @click="isMobile && (drawer = false)">
-          <v-list-item-icon class="drawer-item-icon">
-            <v-icon>mdi-view-dashboard</v-icon>
-          </v-list-item-icon>
-          <v-list-item-content>
-            <v-list-item-title>Übersicht</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item to="/scan" class="drawer-item" @click="isMobile && (drawer = false)">
-          <v-list-item-icon class="drawer-item-icon">
-            <v-icon>mdi-camera</v-icon>
-          </v-list-item-icon>
-          <v-list-item-content>
-            <v-list-item-title>Beleg scannen</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item to="/billOverview" class="drawer-item" @click="isMobile && (drawer = false)">
-          <v-list-item-icon class="drawer-item-icon">
-            <v-icon>mdi-file-document</v-icon>
-          </v-list-item-icon>
-          <v-list-item-content>
-            <v-list-item-title>gescannte Belege</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item to="/analysis" class="drawer-item" @click="isMobile && (drawer = false)">
-          <v-list-item-icon class="drawer-item-icon">
-            <v-icon>mdi-poll</v-icon>
-          </v-list-item-icon>
-          <v-list-item-content>
-            <v-list-item-title>Analysen</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-spacer></v-spacer>
-      </v-list>
-    </v-navigation-drawer>
-
-      <!-- Content -->
-      <v-main class="content">
+<template>
+  <div class="profile-page">
+    <v-container>
         
-        <v-container class="profile-container">
-
-          <v-card class="profile-card" elevation="4">
+      <!-- HEADER -->
+      <v-card class="profile-header" elevation="4">
+        
+        <div class="header-left">
+ <v-btn icon variant="text" class="back-btn bg-white text-black" to="dashboard">
+      <v-icon>mdi-arrow-left</v-icon>
+    </v-btn>
+          <v-avatar size="60" class="avatar">
+            <span>{{ userInitials }}</span>
+          </v-avatar>
             
-            <v-card-title class="text-h5 font-weight-bold mb-4 text-black">
-              Mein Profil
-            </v-card-title>
+          <div class="text-black">
+            <h2>Mein Account</h2>
+            <p>{{ userEmail }}</p>
+            <small>{{ userName }}</small>
+          </div>
+        </div>
 
-            <v-divider class="mb-6" />
+        <div class="header-right">
+          <v-btn variant="text">Zurück zum Dashboard</v-btn>
+          <v-btn class="text-black bg-white  user-info" rounded to="/">Logout
+              <v-icon end>mdi-logout</v-icon></v-btn>
+        </div>
+      </v-card>
+
+      <!-- CONTENT -->
+      <v-row class="mt-6">
+        <!-- Persönliche Daten -->
+        <v-col cols="12" md="7">
+          <v-card class="content-card" elevation="2">
+            <h3>Persönliche Daten</h3>
 
             <v-row>
-              <v-col cols="12" md="4" class="text-center">
-                <v-avatar size="120" class="big-avatar mb-4 bg-white" variant="outlined">
-                  <span class="text-h4 text-black ">J</span>
-                </v-avatar>
-
-                <v-btn color="white" class="text-black" variant="flat">
-                  Avatar ändern
-                </v-btn>
+              <v-col cols="6">
+                <v-text-field label="Vorname" block rounded  variant="outlined" class="text-black" />
               </v-col>
-
-              <v-col cols="12" md="8">
-                <v-form>
-                  <v-text-field
-                    label="Name"
-                    variant="outlined"
-                    class="mb-4 text-black  "
-                    
-                  />
-                  <v-text-field
-                    label="E-Mail"
-                    variant="outlined"
-                    class="mb-4 text-black"
-                  />
-                  <v-text-field
-                    label="Standort"
-                    variant="outlined"
-                    class="mb-4 text-black"
-                  />
-                  <v-text-field
-                    label="Neues Passwort"
-                    type="password"
-                    variant="outlined"
-                    class="mb-4 text-black"
-                  />
-
-                  <v-btn
-                    color="white"
-                    size="large"
-                    class="save-btn text-black"
-                  >
-                    Änderungen speichern
-                  </v-btn>
-                </v-form>
+              <v-col cols="6">
+                <v-text-field label="Nachname" block rounded variant="outlined" class="text-black" />
+              </v-col>
+              <v-col cols="6">
+                <v-text-field v-model="state.name" label="Benutzername" block rounded variant="outlined" class="text-black" clearable model-value=' '> {{ userName }}</v-text-field>
+              </v-col>
+              <v-col cols="6">
+                
+                <v-text-field label="E-Mail" v-model="state.email" block rounded variant="outlined" class="text-black" model-value=' '>   {{ userEmail }}</v-text-field>
+              </v-col>
+               <v-col cols="6">
+                <v-text-field label="Password" v-model="state.password"
+                  :error-messages="v$.password.$errors.map((e) => e.$message)" :type="show1 ? 'text' : 'password'"
+                  variant="outlined" class="text-black" required @blur="v$.password.$touch"
+                  @input="v$.password.$touch" :append-inner-icon="show1 ? 'mdi-eye-off' : 'mdi-eye'"
+                  @click:append-inner="show1 = !show1" rounded block />
+              </v-col>
+               <v-col cols="6">
+                <v-text-field label="Standort" block rounded variant="outlined" class="text-black" />
               </v-col>
             </v-row>
 
+            <div class="actions">
+              <v-btn color="primary" rounded dense @click="loadUser()" >Profil speichern</v-btn>
+              <v-btn variant="outlined" class="bg-black" rounded dense  >Änderungen verwerfen</v-btn>
+            </div>
           </v-card>
+        </v-col>
 
-        </v-container>
-        
-      </v-main>
-</v-layout>
-                                
-  </v-app>
+        <!-- Account Aktionen -->
+        <v-col cols="12" md="5">
+          <v-card class="content-card danger-card" elevation="2">
+            <h3>Account-Aktionen</h3>
+            <p>Diese Aktionen betreffen deinen Zugang.</p>
 
+            <div class="mt-6">
+              <v-btn color="white bg-red" variant="outlined" block>
+                Account löschen
+              </v-btn>
+            </div>
+          </v-card>
+        </v-col>
+      </v-row>
+
+    </v-container>
+  </div>
 </template>
+
 <script setup>
-import { reactive,ref,computed,onMounted,onBeforeUnmount } from "vue";
+import { reactive,ref,computed,onMounted,onBeforeUnmount, onBeforeMount } from "vue";
 import { useVuelidate } from "@vuelidate/core";
 import { email, required } from "@vuelidate/validators";
+import { loadUserData } from "@/utils/loadUser";
 
 const password = String;
 const drawer = ref(true);
 const isMobile = ref(false);
+
 const initialState = {
       name: "",
   email: "",
@@ -196,7 +116,7 @@ const rules = {
 };
 
 const v$ = useVuelidate(rules, state);
-const drawerWidth = computed(() => (isMobile.value ? 280 : 120));
+
 
 function clear() {
   v$.value.$reset();
@@ -223,6 +143,41 @@ async function fetchData() {
   if (!res.ok) throw new Error("HTTP " + res.status + " " + res.statusText);
   return await res.json();
 }
+
+const userName = ref("user");
+const userInitials = ref("u");
+const userEmail = ref("user@mail.com");
+//const userPassword = ref("")
+
+async function loadUser() {
+    const user = await loadUserData();
+    userName.value = user?.username || "user";
+    userInitials.value = userName.value[0];
+    userEmail.value = user?.email || "user@mail.com";
+    
+};
+onBeforeMount(() => { 
+  loadUser(userName); 
+  loadUserData();
+});
+onMounted(() => {
+  updateIsMobile();
+  window.addEventListener("resize", updateIsMobile);
+
+
+});
+const updateIsMobile = () => {
+  isMobile.value = window.matchMedia("(max-width: 700px)").matches;
+  if (isMobile.value) drawer.value = false;
+};
+onBeforeUnmount(() => {
+  window.removeEventListener("resize", updateIsMobile);
+});
+
+const show1 = ref(false)
+const show2 = ref(true)
+
+
 </script>
 
 <style lang="scss" scoped>
@@ -232,238 +187,132 @@ $sidebar-bg: #a8e6b8;
 $topbar-bg: #bcefc2;
 $text-primary:	#28282B;
 $border-dark: #28282B;
+$farbe: #f6fbf9;
 
 $topbar-height: 120px;
 $profile-size: 48px;
 $app-title-size: 38px;
 
-.top-bar {
-  background-color: $topbar-bg !important;
-  border-bottom: 5px solid $border-dark;
-  height: $topbar-height;
-  --v-toolbar-height: #{$topbar-height};
-  align-items: center;
-  position: relative;
-  padding-left: 12px;
-  padding-right: 12px;
-  overflow: visible;
+.profile-page {
+  min-height: 100vh;
+  padding: 60px 0;
+
+  background: linear-gradient(
+    135deg,
+    #f6fbf9 0%,
+    #e8f6f1 50%,
+    #d8eee6 100%
+  );
 }
 
-.app-title {
-  margin: 0 auto;
-  font-size: $app-title-size;
-  font-weight: 700;
-  color: $text-primary !important;
-  text-align: center;
-  line-height: 1.2;
+/* HEADER */
 
-  :deep(*) {
-    color: $text-primary !important;
+.profile-header {
+  padding: 25px 35px;
+  border-radius: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+
+    h2 {
+      margin: 0;
+      font-weight: 600;
+    }
+
+    p {
+      margin: 0;
+      color: #666;
+    }
+
+    small {
+      color: #999;
+    }
+  }
+
+  .header-right {
+    display: flex;
+    gap: 15px;
   }
 }
 
-.top-profile-btn {
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 10;
-  overflow: visible;
+.avatar {
+  background: linear-gradient(135deg, #4fc3a1, #2bbbad);
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
 }
 
-.rounded-profile {
-  background: linear-gradient(#f5fff8, #e9fff0);
-  border-radius: 999px;
-  width: $profile-size;
-  height: $profile-size;
+/* CONTENT CARDS */
+
+.content-card {
+  padding: 30px;
+  border-radius: 18px;
+  background: white;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.04);
+
+  h3 {
+    margin-bottom: 20px;
+    font-weight: 600;
+  }
+
+  .actions {
+    margin-top: 25px;
+    display: flex;
+    gap: 15px;
+  }
+}
+
+/* Danger Card */
+
+.danger-card {
+  border: 1px solid #ffe5e5;
+  background: #fffdfd;
+
+  h3 {
+    color: #c62828;
+  }
+}
+
+.header-left {
   display: flex;
   align-items: center;
-  justify-content: center;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.12);
-  padding: 0;
+  gap: 25px;
 }
 
-.profile {
-  font-size: 18px;
-  line-height: 1;
-  color: #bcefc2;
-}
-
-.left-drawer {
-  background-color: $sidebar-bg !important;
-  border-right: 2px solid rgba(0,0,0,0.08);
-  padding-top: 80px;
-  box-sizing: border-box;
-  overflow: visible;
-  color: $text-primary;
-  /* IMPORTANT: keine feste width hier erzwingen, sonst kollidiert es mit :width */
-}
-
-.drawer-list {
-  width: 100%;
-  padding-left: 8px;
-  padding-right: 8px;
-}
-
-/* Desktop: icon over text */
-.drawer-item {
-  color: $text-primary !important;
-  min-height: 96px;
-  padding: 8px 6px;
+.avatar-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  text-align: center;
-
-  .v-list-item__content {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .drawer-item-icon {
-    margin: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .v-list-item-title {
-    font-size: 12px;
-    line-height: 1.2;
-    color: $text-primary !important;
-    margin-top: 6px;
-    white-space: normal;
-    word-break: keep-all;
-  }
-
-  .v-icon {
-    color: $text-primary !important;
-    font-size: 28px;
-    line-height: 1;
-  }
+  position: relative;
 }
 
-/* IMPORTANT:
-   Do NOT override v-main padding (Vuetify uses it for layout offsets).
-   Put your spacing into the inner wrap instead.
-*/
-.main-area {
-  background: white;
-  box-sizing: border-box;
-  /* remove the old calculated paddings */
-  padding: unset;
-  min-height: 100%;
+.back-btn {
+  margin-bottom: 8px;
+  color: #333;
 }
 
-/* add page padding inside the wrap (after drawer/appbar offset) */
-
-
-/* Mobile: ignore any left layout offset to prevent "white strip"/overlap */
-@media (max-width: 700px) {
-  .top-bar {
-    height: 64px;
-    --v-toolbar-height: 64px;
-  }
-
-  .app-title {
-    font-size: 22px;
-  }
-
-  .main-area :deep(.v-main__wrap) {
-    padding: 12px 4vw;
-  }
-
-  /* Mobile drawer: bessere Lesbarkeit, größere Touch-Ziele */
-  .drawer-item {
-    min-height: 56px;
-    flex-direction: row;
-    justify-content: flex-start;
-    text-align: left;
-    padding: 10px 10px;
-
-    .v-list-item__content {
-      align-items: flex-start;
-    }
-
-    .v-list-item-title {
-      margin-top: 0;
-      font-size: 14px;
-    }
-
-    .v-icon {
-      font-size: 24px;
-    }
-  }
-}
-
-
-
-$app-green: #A8D5BA;
-$app-light-green: #BFE3C8;
-$app-very-light: #E8F5EC;
-$app-background: #F3F4F6;
-
-.app-bar {
-  background: $app-green;
-  color: #1f2937;
-}
-
-.sidebar {
-  background: $app-green;
-  color: #1f2937;
-
-  .v-list-item {
-    border-radius: 10px;
-    margin: 6px 10px;
-
-    &:hover {
-      background: $app-light-green;
-      transition: 0.3s ease;
-    }
-  }
-}
-
-.content {
-  background: $app-background;
-  min-height: 100vh;
-  padding: 150px 0;
-}
-
-.profile-container {
-  max-width: 900px;
-}
-
-.profile-card {
-  background: $app-light-green;
-  padding: 40px;
-  border-radius: 20px;
-}
-
-.profile-avatar {
-  background: white;
-  color: #1f2937;
-  font-weight: bold;
-}
-
-.big-avatar {
-  background: $app-green;
+.avatar {
+  background: linear-gradient(135deg, #4fc3a1, #2bbbad);
   color: white;
+  font-weight: 600;
+  font-size: 20px;
 }
 
-.save-btn {
-  border-radius: 12px;
-  padding: 12px 32px;
-}
+.user-info {
+  h3 {
+    margin: 0;
+    font-weight: 500;
+  }
 
-.v-text-field {
-  .v-field {
-    border-radius: 12px;
-    background: white;
+  small {
+    color: #777;
   }
 }
-</style>
-
+</style>  
