@@ -26,7 +26,7 @@
             <v-img :src="item.img" height="160" class="bill-card-img" contain />
             <v-card-text class="bill-card-body">
               <div class="trans-title">{{ item.transaktion }}</div>
-              <div class="trans-meta">Beleg</div>
+              <div class="trans-meta">{{ item.categoryLabel || "Sonstiges" }}</div>
             </v-card-text>
           </v-card>
         </v-col>
@@ -105,6 +105,7 @@ export default {
           return {
             img: imgSrc,
             transaktion: item.transaktion || item.title || '',
+            categoryLabel: item.categoryLabel || item.category_name || item.category || 'Sonstiges',
             documentId: item.documentId || null
           };
         });

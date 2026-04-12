@@ -151,10 +151,10 @@
 
         <v-row>
           <!-- LOCATION -->
-          <v-select
+          <v-combobox
             v-model="formData.location"
             :items="locations"
-            item-text="attributes.city"
+            item-title="label"
             item-value="id"
             label="🏪 Location *"
             dense
@@ -163,10 +163,10 @@
           />
 
           <!-- CATEGORY -->
-          <v-select
+          <v-combobox
             v-model="formData.category"
             :items="categories"
-            item-text="attributes.name"
+            item-title="label"
             item-value="id"
             label="🏷️ Kategorie *"
             dense
@@ -175,10 +175,10 @@
           />
 
           <!-- PAYMENT TYPE -->
-          <v-select
+          <v-combobox
             v-model="formData.payment_type"
             :items="paymentTypes"
-            item-text="attributes.name"
+            item-title="label"
             item-value="id"
             label="💳 Zahlungsart *"
             dense
@@ -270,9 +270,15 @@
 </template>
 
 <script>
+import {
+  classifyReceiptCategory,
+  PREDEFINED_CATEGORIES,
+} from "@/utils/receipt-category";
+
 export default {
   data() {
     return {
+      apiBase: "https://elegant-eggs-b247740f2b.strapiapp.com",
       selectedFile: null,
       result: null,
       loading: false,
@@ -285,9 +291,9 @@ export default {
       formData: {
         items: [],
         totals: {
-          summe: 0,
-          gezahlt: 0,
-          rueckgeld: 0,
+          summe: null,
+          gezahlt: null,
+          rueckgeld: null,
         },
         location: null,
         category: null,
@@ -299,14 +305,6 @@ export default {
       categories: [],
       paymentTypes: [],
 
-      // Neue Einträge Dialogs
-      newLocation: { city: "", country: "" },
-      newCategory: { name: "" },
-      newPaymentType: { name: "" },
-      showLocationDialog: false,
-      showCategoryDialog: false,
-      showPaymentDialog: false,
-
       newProduct: {
         name: "",
         unitprice: null,
@@ -317,23 +315,30 @@ export default {
 
   computed: {
     formReady() {
-      return this.formData.items.length > 0 || this.formData.totals.summe;
+      return (
+        this.formData.items.length > 0 ||
+        Number(this.formData.totals.summe || 0) > 0
+      );
+    },
+
+    calculatedItemsTotalNumber() {
+      const total = this.formData.items.reduce((sum, item) => {
+        return (
+          sum +
+          Number(this.toNumber(item.unitprice) || 0) *
+            Number(this.toNumber(item.quantity) || 0)
+        );
+      }, 0);
+      return Math.round(total * 100) / 100;
     },
 
     calculatedItemsTotal() {
-      return this.formData.items
-        .reduce((sum, item) => {
-          return (
-            sum +
-            parseFloat(item.unitprice || 0) * parseFloat(item.quantity || 1)
-          );
-        }, 0)
-        .toFixed(2);
+      return this.calculatedItemsTotalNumber.toFixed(2);
     },
 
     formValid() {
       return (
-        this.formData.totals.summe &&
+        Number(this.toNumber(this.formData.totals.summe) || 0) > 0 &&
         this.formData.items.length > 0 &&
         this.formData.location &&
         this.formData.category &&
@@ -342,28 +347,100 @@ export default {
     },
 
     canAddProduct() {
-      return this.newProduct.name && this.newProduct.unitprice;
+      return (
+        this.newProduct.name && Number(this.toNumber(this.newProduct.unitprice)) > 0
+      );
     },
 
     calculatedRueckgeld() {
-      const summe = parseFloat(this.formData.totals.summe || 0);
-      const gezahlt = parseFloat(this.formData.totals.gezahlt || 0);
-      return (gezahlt - summe).toFixed(2);
+      const summe = Number(this.toNumber(this.formData.totals.summe) || 0);
+      const gezahlt = Number(this.toNumber(this.formData.totals.gezahlt) || 0);
+      const diff = gezahlt - summe;
+      return (diff > 0 ? diff : 0).toFixed(2);
+    },
+  },
+
+  watch: {
+    "formData.totals.summe": "syncRueckgeld",
+    "formData.totals.gezahlt": "syncRueckgeld",
+    "formData.items": {
+      handler() {
+        this.updateTotal();
+      },
+      deep: true,
     },
   },
 
   async mounted() {
-    // Listen laden
-    await Promise.all([
-      this.fetchLocations(),
-      this.fetchCategories(),
-      this.fetchPaymentTypes(),
-      this.fetchDropdownData(),
-    ]);
+    await this.fetchDropdownData();
   },
 
   methods: {
-    // === UPLOAD (unverändert) ===
+    toNumber(value) {
+      if (value === null || value === undefined || value === "") return null;
+      if (typeof value === "number") return Number.isFinite(value) ? value : null;
+      const normalized = String(value)
+        .replace(/[^\d,.-]/g, "")
+        .replace(/\.(?=.*\.)/g, "")
+        .replace(",", ".");
+      const parsed = Number(normalized);
+      return Number.isFinite(parsed) ? parsed : null;
+    },
+
+    extractEntityLabel(entity, type) {
+      const attrs = entity?.attributes || {};
+      if (type === "location") {
+        const city = attrs.city || entity?.city || "";
+        const country = attrs.country || entity?.country || "";
+        return [city, country].filter(Boolean).join(", ") || "Unbekannt";
+      }
+      return attrs.name || entity?.name || "Unbekannt";
+    },
+
+    normalizeEntities(list = [], type) {
+      return (list || []).map((entry) => {
+        const id = entry?.id;
+        return {
+          id,
+          label: this.extractEntityLabel(entry, type),
+        };
+      });
+    },
+
+    getAuthHeaders(withJson = true) {
+      const token = localStorage.getItem("token");
+      const headers = {};
+      if (withJson) headers["Content-Type"] = "application/json";
+      if (token) headers.Authorization = `Bearer ${token}`;
+      return headers;
+    },
+
+    async fetchJson(path) {
+      const response = await fetch(`${this.apiBase}${path}`, {
+        headers: this.getAuthHeaders(false),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data?.error?.message || "Fehler beim Laden");
+      }
+      return data;
+    },
+
+    syncRueckgeld() {
+      const computed = Number(this.calculatedRueckgeld);
+      this.formData.totals.rueckgeld = Number.isFinite(computed)
+        ? computed.toFixed(2)
+        : "0.00";
+    },
+
+    updateTotal() {
+      const summe = this.toNumber(this.formData.totals.summe);
+      if (summe === null || summe === 0) {
+        this.formData.totals.summe = this.calculatedItemsTotal;
+      }
+      this.syncRueckgeld();
+    },
+
     async uploadReceipt() {
       if (!this.selectedFile) return;
 
@@ -376,35 +453,36 @@ export default {
         payment_type: null,
       };
 
-      const formData = new FormData();
-      formData.append("file", this.selectedFile);
+      const uploadData = new FormData();
+      uploadData.append("file", this.selectedFile);
 
       try {
         const response = await fetch("/api/receipt", {
           method: "POST",
-          body: formData,
+          body: uploadData,
         });
 
         const data = await response.json();
         console.log("✅ Backend Response:", data);
 
+        this.result = data;
         this.fillFormFromRawData(data.data);
       } catch (error) {
         console.error("❌ Upload Fehler:", error);
+        alert("Beleg konnte nicht verarbeitet werden.");
         window.scrollTo({ top: 0, behavior: "smooth" });
       } finally {
         this.loading = false;
       }
     },
 
-    // === FETCH LISTS ===
     async fetchLocations(search = "") {
       try {
-        const response = await fetch(
-          `https://elegant-eggs-b247740f2b.strapiapp.com/api/locations?filters[city][$containsi]=${search}&populate=*`,
+        const query = encodeURIComponent(search);
+        const data = await this.fetchJson(
+          `/api/locations?filters[city][$containsi]=${query}&populate=*`,
         );
-        const data = await response.json();
-        this.locations = data.data || [];
+        this.locations = this.normalizeEntities(data.data || [], "location");
       } catch (error) {
         console.error("Locations laden fehlgeschlagen:", error);
       }
@@ -412,11 +490,11 @@ export default {
 
     async fetchCategories(search = "") {
       try {
-        const response = await fetch(
-          `https://elegant-eggs-b247740f2b.strapiapp.com/api/categories?filters[name][$containsi]=${search}`,
+        const query = encodeURIComponent(search);
+        const data = await this.fetchJson(
+          `/api/categories?filters[name][$containsi]=${query}&populate=*`,
         );
-        const data = await response.json();
-        this.categories = data.data || [];
+        this.categories = this.normalizeEntities(data.data || [], "category");
       } catch (error) {
         console.error("Categories laden fehlgeschlagen:", error);
       }
@@ -424,171 +502,269 @@ export default {
 
     async fetchPaymentTypes(search = "") {
       try {
-        const response = await fetch(
-          `https://elegant-eggs-b247740f2b.strapiapp.com/api/payment-types?filters[name][$containsi]=${search}`,
+        const query = encodeURIComponent(search);
+        const data = await this.fetchJson(
+          `/api/payment-types?filters[name][$containsi]=${query}&populate=*`,
         );
-        const data = await response.json();
-        this.paymentTypes = data.data || [];
+        this.paymentTypes = this.normalizeEntities(data.data || [], "payment");
       } catch (error) {
         console.error("PaymentTypes laden fehlgeschlagen:", error);
       }
     },
 
-    // === SAVE NEW ENTRIES ===
-    async saveNewLocation() {
-      try {
-        const response = await fetch(
-          "https://elegant-eggs-b247740f2b.strapiapp.com/api/locations",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              data: this.newLocation,
-            }),
-          },
-        );
+    async createEntity(path, payload) {
+      const response = await fetch(`${this.apiBase}${path}`, {
+        method: "POST",
+        headers: this.getAuthHeaders(true),
+        body: JSON.stringify({ data: payload }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result?.data?.id) {
+        throw new Error(result?.error?.message || "Erstellen fehlgeschlagen");
+      }
+      return result.data;
+    },
 
-        const result = await response.json();
-        this.formData.location = result.data.id;
-        await this.fetchLocations();
-        this.showLocationDialog = false;
-        this.newLocation = { city: "", country: "" };
-      } catch (error) {
-        alert("Location konnte nicht gespeichert werden");
+    findExistingByLabel(list, value) {
+      const normalized = String(value || "").trim().toLowerCase();
+      return list.find((entry) => entry.label.toLowerCase() === normalized) || null;
+    },
+
+    extractComboboxText(value) {
+      if (value === null || value === undefined) return "";
+      if (typeof value === "string" || typeof value === "number") return String(value);
+      if (typeof value === "object") {
+        if (value.title) return String(value.title);
+        if (value.label) return String(value.label);
+        if (value.value && Number.isNaN(Number(value.value))) return String(value.value);
+      }
+      return "";
+    },
+
+    normalizeText(value) {
+      return String(value || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
+    },
+
+    findCategoryMatchByLabel(label) {
+      const target = this.normalizeText(label);
+      if (!target) return null;
+
+      const exact = this.categories.find(
+        (entry) => this.normalizeText(entry.label) === target,
+      );
+      if (exact) return exact;
+
+      return (
+        this.categories.find(
+          (entry) =>
+            this.normalizeText(entry.label).includes(target) ||
+            target.includes(this.normalizeText(entry.label)),
+        ) || null
+      );
+    },
+
+    applyAutomaticCategory(rawData) {
+      if (this.formData.category) return;
+
+      const predictedCategory = classifyReceiptCategory({
+        raw: rawData,
+        items: this.formData.items,
+        metadata: this.result?.metadata,
+        ocrText: this.result?.ocrText || this.result?.text,
+        filename: this.selectedFile?.name,
+      });
+
+      const existingCategory = this.findCategoryMatchByLabel(predictedCategory);
+      if (existingCategory) {
+        this.formData.category = existingCategory.id;
+        return;
+      }
+
+      if (PREDEFINED_CATEGORIES.includes(predictedCategory)) {
+        this.formData.category = predictedCategory;
       }
     },
 
-    async saveNewCategory() {
-      try {
-        const response = await fetch(
-          "https://elegant-eggs-b247740f2b.strapiapp.com/api/categories",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              data: this.newCategory,
-            }),
-          },
-        );
-
-        const result = await response.json();
-        this.formData.category = result.data.id;
-        await this.fetchCategories();
-        this.showCategoryDialog = false;
-        this.newCategory = { name: "" };
-      } catch (error) {
-        alert("Kategorie konnte nicht gespeichert werden");
+    async ensureLocation(value) {
+      if (typeof value === "number") return value;
+      if (!value) return null;
+      if (typeof value === "string" && /^\d+$/.test(value.trim())) return Number(value);
+      if (typeof value === "object" && value.id) return value.id;
+      if (typeof value === "object" && value.value && !Number.isNaN(Number(value.value))) {
+        return Number(value.value);
       }
+
+      const freeText = this.extractComboboxText(value).trim();
+      if (!freeText) return null;
+
+      const existing = this.findExistingByLabel(this.locations, freeText);
+      if (existing) return existing.id;
+
+      const raw = freeText;
+      const [city, country] = raw.split(",").map((part) => part.trim());
+      const created = await this.createEntity("/api/locations", {
+        city,
+        country: country || "",
+      });
+
+      const normalized = {
+        id: created.id,
+        label: this.extractEntityLabel(created, "location"),
+      };
+      this.locations.push(normalized);
+      return normalized.id;
     },
 
-    async saveNewPaymentType() {
-      try {
-        const response = await fetch(
-          "https://elegant-eggs-b247740f2b.strapiapp.com/api/payment-types",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              data: this.newPaymentType,
-            }),
-          },
-        );
-
-        const result = await response.json();
-        this.formData.payment_type = result.data.id;
-        await this.fetchPaymentTypes();
-        this.showPaymentDialog = false;
-        this.newPaymentType = { name: "" };
-      } catch (error) {
-        alert("Zahlungsart konnte nicht gespeichert werden");
+    async ensureCategory(value) {
+      if (typeof value === "number") return value;
+      if (!value) return null;
+      if (typeof value === "string" && /^\d+$/.test(value.trim())) return Number(value);
+      if (typeof value === "object" && value.id) return value.id;
+      if (typeof value === "object" && value.value && !Number.isNaN(Number(value.value))) {
+        return Number(value.value);
       }
+
+      const freeText = this.extractComboboxText(value).trim();
+      if (!freeText) return null;
+
+      const existing = this.findExistingByLabel(this.categories, freeText);
+      if (existing) return existing.id;
+
+      const name = freeText;
+      const created = await this.createEntity("/api/categories", { name });
+      const normalized = {
+        id: created.id,
+        label: this.extractEntityLabel(created, "category"),
+      };
+      this.categories.push(normalized);
+      return normalized.id;
     },
 
-    // === FILL FORM (unverändert + Auto-Fill Location/Category) ===
+    async ensurePaymentType(value) {
+      if (typeof value === "number") return value;
+      if (!value) return null;
+      if (typeof value === "string" && /^\d+$/.test(value.trim())) return Number(value);
+      if (typeof value === "object" && value.id) return value.id;
+      if (typeof value === "object" && value.value && !Number.isNaN(Number(value.value))) {
+        return Number(value.value);
+      }
+
+      const freeText = this.extractComboboxText(value).trim();
+      if (!freeText) return null;
+
+      const existing = this.findExistingByLabel(this.paymentTypes, freeText);
+      if (existing) return existing.id;
+
+      const name = freeText;
+      const created = await this.createEntity("/api/payment-types", { name });
+      const normalized = {
+        id: created.id,
+        label: this.extractEntityLabel(created, "payment"),
+      };
+      this.paymentTypes.push(normalized);
+      return normalized.id;
+    },
+
     fillFormFromRawData(rawData) {
       console.log("🔍 Parsing raw data:", rawData);
 
       const items = [];
-      let maxPrice = 0;
+      const parsedItems = Array.isArray(rawData)
+        ? rawData
+        : Array.isArray(rawData?.items)
+          ? rawData.items
+          : [];
 
-      if (Array.isArray(rawData)) {
-        rawData.forEach((item) => {
-          let name = item.nm || item.price?.nm || "Unbekannt";
-          let price =
-            item.price || item.unitprice || item.price?.unitprice || "";
+      parsedItems.forEach((item) => {
+        const name = item.name || item.nm || item.price?.nm || "Unbekannt";
+        const unitPriceRaw =
+          item.unitprice || item.unitPrice || item.price || item.price?.unitprice;
+        const quantityRaw = item.quantity || item.cnt || 1;
 
-          price = price
-            .toString()
-            .replace(/[^\d.,]/g, "")
-            .replace(",", ".");
-          const priceNum = parseFloat(price) || 0;
+        const unitPrice = this.toNumber(unitPriceRaw);
+        const quantity = this.toNumber(quantityRaw) || 1;
 
-          if (priceNum > maxPrice) {
-            maxPrice = priceNum;
-          }
+        if (!name || !unitPrice || unitPrice <= 0) return;
 
-          if (
-            name &&
-            priceNum > 0 &&
-            !String(name).toUpperCase().includes("SUMME")
-          ) {
-            items.push({
-              name: name.toString().trim(),
-              unitprice: priceNum.toFixed(2),
-              quantity: parseFloat(item.cnt) || 1,
-            });
-          }
+        items.push({
+          name: String(name).trim(),
+          unitprice: unitPrice.toFixed(2),
+          quantity,
         });
-      }
+      });
 
-      this.formData.totals.summe = maxPrice.toFixed(2);
       this.formData.items = items;
+
+      const summeFromOcr = this.toNumber(rawData?.totals?.summe);
+      const gezahltFromOcr = this.toNumber(rawData?.totals?.gezahlt);
+      const rueckgeldFromOcr = this.toNumber(rawData?.totals?.rueckgeld);
+
+      const fallbackSum = this.calculatedItemsTotalNumber;
+      this.formData.totals.summe = (summeFromOcr ?? fallbackSum).toFixed(2);
+      this.formData.totals.gezahlt = gezahltFromOcr !== null ? gezahltFromOcr.toFixed(2) : null;
+      this.formData.totals.rueckgeld =
+        rueckgeldFromOcr !== null ? rueckgeldFromOcr.toFixed(2) : null;
+
+      this.syncRueckgeld();
 
       // Auto-Fill (wenn Backend metadata liefert)
       if (this.result?.metadata) {
         if (this.result.metadata.category) {
           const cat = this.categories.find((c) =>
-            c.attributes.name
-              .toLowerCase()
-              .includes(this.result.metadata.category.toLowerCase()),
+            c.label.toLowerCase().includes(this.result.metadata.category.toLowerCase()),
           );
           if (cat) this.formData.category = cat.id;
         }
         if (this.result.metadata.location?.city) {
           const loc = this.locations.find((l) =>
-            l.attributes.city
-              .toLowerCase()
-              .includes(this.result.metadata.location.city.toLowerCase()),
+            l.label.toLowerCase().includes(this.result.metadata.location.city.toLowerCase()),
           );
           if (loc) this.formData.location = loc.id;
         }
       }
 
+      this.applyAutomaticCategory(rawData);
+
       console.log("✅ Formular gefüllt:", this.formData);
     },
 
-    // === ITEMS (unverändert) ===
     itemTotal(item) {
       const total =
-        parseFloat(item.unitprice || 0) * parseFloat(item.quantity || 1);
+        Number(this.toNumber(item.unitprice) || 0) *
+        Number(this.toNumber(item.quantity) || 1);
       return total.toFixed(2).replace(".", ",");
     },
 
     addProduct() {
       this.formData.items.push({
-        name: this.newProduct.name,
-        unitprice: this.newProduct.unitprice.toFixed(2),
-        quantity: this.newProduct.quantity,
+        name: String(this.newProduct.name || "").trim(),
+        unitprice: Number(this.toNumber(this.newProduct.unitprice) || 0).toFixed(2),
+        quantity: Number(this.toNumber(this.newProduct.quantity) || 1),
       });
 
       this.newProduct = { name: "", unitprice: null, quantity: 1 };
+      this.updateTotal();
     },
 
     removeItem(index) {
       this.formData.items.splice(index, 1);
+      this.updateTotal();
     },
 
-    // === SAVE RECEIPT (angepasst an deine Strapi Schemas) ===
+    async postReceiptPayload(payload) {
+      const response = await fetch(`${this.apiBase}/api/receipts`, {
+        method: "POST",
+        headers: this.getAuthHeaders(true),
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json().catch(() => ({}));
+      return { ok: response.ok, status: response.status, result };
+    },
+
     async saveReceipt() {
       if (!this.formValid) {
         alert("Bitte alle Pflichtfelder ausfüllen!");
@@ -598,49 +774,86 @@ export default {
       try {
         this.saving = true;
 
-        // ✅ STRAPI-FORMAT!
-        const payload = {
+        const locationId = await this.ensureLocation(this.formData.location);
+        const categoryId = await this.ensureCategory(this.formData.category);
+        const paymentTypeId = await this.ensurePaymentType(this.formData.payment_type);
+
+        const summe = Number(this.toNumber(this.formData.totals.summe) || 0);
+        const gezahlt = Number(this.toNumber(this.formData.totals.gezahlt) || 0);
+        const rueckgeld = Number(this.toNumber(this.formData.totals.rueckgeld) || 0);
+
+        const normalizedItems = this.formData.items
+          .map((item) => {
+            const quantity = Number(this.toNumber(item.quantity) || 1);
+            const unitPrice = Number(this.toNumber(item.unitprice) || 0);
+            return {
+              name: String(item.name || "").trim(),
+              quantity,
+              unitPrice: Number(unitPrice.toFixed(2)),
+              lineTotal: Number((quantity * unitPrice).toFixed(2)),
+            };
+          })
+          .filter((item) => item.name && item.unitPrice > 0);
+
+        const nowIso = new Date().toISOString();
+        const unixTime = Math.floor(Date.now() / 1000);
+        const categoryLabel =
+          this.categories.find((entry) => entry.id === categoryId)?.label || "Unbekannt";
+
+        const fullPayload = {
           data: {
-            // ←← HIER data-Wrapper!
-            location: this.formData.location,
-            category: this.formData.category,
-            payment_type: this.formData.payment_type,
-            items: this.formData.items.map((item) => ({
-              name: item.name,
-              quantity: item.quantity,
-              unitPrice: item.unitprice,
-            })),
-            // totals: {
-            //   summe: this.formData.totals.summe,
-            //   gezahlt: this.formData.totals.gezahlt,
-            //   rueckgeld: this.formData.totals.rueckgeld,
-            // },
+            location: locationId,
+            category: categoryId,
+            payment_type: paymentTypeId,
+            items: normalizedItems,
+            totals: {
+              summe,
+              gezahlt,
+              rueckgeld,
+            },
+            summe,
+            gezahlt,
+            rueckgeld,
+            amount: summe,
+            total: summe,
+            date: nowIso,
+            unix_time: unixTime,
+            transaktion: `Beleg ${new Date().toLocaleDateString("de-AT")}`,
+            title: "Beleg",
+            category_name: categoryLabel,
           },
         };
 
-        console.log("🔄 Sende:", JSON.stringify(payload, null, 2));
-
-        const response = await fetch(
-          "https://elegant-eggs-b247740f2b.strapiapp.com/api/receipts",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              // Falls Auth nötig:
-              // 'Authorization': 'Bearer DEIN_TOKEN'
-            },
-            body: JSON.stringify(payload),
+        const fallbackPayload = {
+          data: {
+            location: locationId,
+            category: categoryId,
+            payment_type: paymentTypeId,
+            items: normalizedItems,
+            amount: summe,
+            total: summe,
+            date: nowIso,
+            unix_time: unixTime,
+            transaktion: `Beleg ${new Date().toLocaleDateString("de-AT")}`,
           },
-        );
+        };
 
-        const result = await response.json();
+        console.log("🔄 Sende:", JSON.stringify(fullPayload, null, 2));
 
-        if (response.ok && result.data?.id) {
-          alert("✅ Beleg gespeichert! ID: " + result.data.id);
+        let submission = await this.postReceiptPayload(fullPayload);
+        if (!submission.ok) {
+          submission = await this.postReceiptPayload(fallbackPayload);
+        }
+
+        if (submission.ok && submission.result.data?.id) {
+          alert("✅ Beleg gespeichert! ID: " + submission.result.data.id);
           this.resetForm();
         } else {
-          console.error("Backend Response:", result);
-          alert("❌ Server Fehler: " + JSON.stringify(result.error));
+          console.error("Backend Response:", submission.result);
+          alert(
+            "❌ Server Fehler: " +
+              (submission.result?.error?.message || "Speichern nicht möglich"),
+          );
         }
       } catch (error) {
         console.error("💥 Fehler:", error);
@@ -652,27 +865,20 @@ export default {
 
     async fetchDropdownData() {
       try {
-        const [locRes, catRes, payRes] = await Promise.all([
-          fetch(
-            "https://elegant-eggs-b247740f2b.strapiapp.com/api/locations?populate=*",
-          ),
-          fetch(
-            "https://elegant-eggs-b247740f2b.strapiapp.com/api/categories?populate=*",
-          ),
-          fetch(
-            "https://elegant-eggs-b247740f2b.strapiapp.com/api/payment-types?populate=*",
-          ),
+        const [locationsData, categoriesData, paymentData] = await Promise.all([
+          this.fetchJson("/api/locations?populate=*&pagination[pageSize]=100"),
+          this.fetchJson("/api/categories?populate=*&pagination[pageSize]=100"),
+          this.fetchJson("/api/payment-types?populate=*&pagination[pageSize]=100"),
         ]);
 
-        this.locations = (await locRes.json()).data || [];
-        this.categories = (await catRes.json()).data || [];
-        this.paymentTypes = (await payRes.json()).data || [];
+        this.locations = this.normalizeEntities(locationsData.data || [], "location");
+        this.categories = this.normalizeEntities(categoriesData.data || [], "category");
+        this.paymentTypes = this.normalizeEntities(paymentData.data || [], "payment");
       } catch (error) {
         console.error("Dropdown Fehler:", error);
-        // Fallback
-        this.locations = [{ id: 1, attributes: { city: "Wien" } }];
-        this.categories = [{ id: 1, attributes: { name: "Supermarkt" } }];
-        this.paymentTypes = [{ id: 1, attributes: { name: "Cash" } }];
+        this.locations = [{ id: 1, label: "Wien, Österreich" }];
+        this.categories = [{ id: 1, label: "Supermarkt" }];
+        this.paymentTypes = [{ id: 1, label: "Cash" }];
       }
     },
 
