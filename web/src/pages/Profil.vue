@@ -1,98 +1,122 @@
-<template class="bg-primary">
-  <layout>
-    <v-container class="profile-bg-2 fill-height d-flex align-center justify-center">
-      <v-row class="justify-center align-center" style="min-height: 90vh;">
-        <v-col cols="12" sm="10" md="8" lg="6" class="d-flex justify-center align-center">
-          <v-card variant="flat" class="profile-card-large pa-10" color="white">
-            <v-card-title class="text-center profile-title mb-6">Profil</v-card-title>
-            <v-form>
-              <v-card-item class="align-center justify-center">
-                <v-text-field
-                  class="profile-input-large mb-4"
-                  v-model="state.name"
-                  :counter="20"
-                  :error-messages="v$.name.$errors.map((e) => e.$message)"
-                  label="Name"
-                  required
-                  @blur="v$.name.$touch"
-                  @input="v$.name.$touch"
-                ></v-text-field>
-              </v-card-item>
-              <v-card-item class="align-center justify-center">
-                <v-text-field
-                  class="profile-input-large mb-4"
-                  v-model="state.email"
-                  :error-messages="v$.email.$errors.map((e) => e.$message)"
-                  label="E-Mail"
-                  required
-                  @blur="v$.email.$touch"
-                  @input="v$.email.$touch"
-                ></v-text-field>
-              </v-card-item>
-              <v-card-item class="align-center justify-center">
-                <v-text-field
-                  class="profile-input-large mb-5"
-                  v-model="state.password"
-                  :error-messages="v$.password.$errors.map((e) => e.$message)"
-                  label="Passwort"
-                  type="password"
-                  required
-                  @blur="v$.password.$touch"
-                  @input="v$.password.$touch"
-                ></v-text-field>
-              </v-card-item>
-              <v-card-item class="align-center justify-center">
-                <v-btn color="primary" class="profile-btn-large">Speichern</v-btn>
-              </v-card-item>
-            </v-form>
+<template>
+  <div class="profile-page">
+    <v-container>
+        
+      <!-- HEADER -->
+      <v-card class="profile-header" elevation="4">
+        
+        <div class="header-left">
+ <v-btn icon variant="text" class="back-btn bg-white text-black" to="dashboard">
+      <v-icon>mdi-arrow-left</v-icon>
+    </v-btn>
+          <v-avatar size="60" class="avatar">
+            <span>{{ userInitials }}</span>
+          </v-avatar>
+            
+          <div class="text-black">
+            <h2>Mein Account</h2>
+            <p>{{ userEmail }}</p>
+            <small>{{ userName }}</small>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <v-btn variant="text">Zurück zum Dashboard</v-btn>
+          <v-btn class="text-black bg-white  user-info" rounded to="/">Logout
+              <v-icon end>mdi-logout</v-icon></v-btn>
+        </div>
+      </v-card>
+
+      <!-- CONTENT -->
+      <v-row class="mt-6">
+        <!-- Persönliche Daten -->
+        <v-col cols="12" md="7">
+          <v-card class="content-card" elevation="2">
+            <h3>Persönliche Daten</h3>
+
+            <v-row>
+              <v-col cols="6">
+                <v-text-field label="Vorname" block rounded  variant="outlined" class="text-black" />
+              </v-col>
+              <v-col cols="6">
+                <v-text-field label="Nachname" block rounded variant="outlined" class="text-black" />
+              </v-col>
+              <v-col cols="6">
+                <v-text-field v-model="state.name" label="Benutzername" block rounded variant="outlined" class="text-black" clearable model-value=' '> {{ userName }}</v-text-field>
+              </v-col>
+              <v-col cols="6">
+                
+                <v-text-field label="E-Mail" v-model="state.email" block rounded variant="outlined" class="text-black" model-value=' '>   {{ userEmail }}</v-text-field>
+              </v-col>
+               <v-col cols="6">
+                <v-text-field label="Password" v-model="state.password"
+                  :error-messages="v$.password.$errors.map((e) => e.$message)" :type="show1 ? 'text' : 'password'"
+                  variant="outlined" class="text-black" required @blur="v$.password.$touch"
+                  @input="v$.password.$touch" :append-inner-icon="show1 ? 'mdi-eye-off' : 'mdi-eye'"
+                  @click:append-inner="show1 = !show1" rounded block />
+              </v-col>
+               <v-col cols="6">
+                <v-text-field label="Standort" block rounded variant="outlined" class="text-black" />
+              </v-col>
+            </v-row>
+
+            <div class="actions">
+              <v-btn color="primary" rounded dense @click="loadUser()" >Profil speichern</v-btn>
+              <v-btn variant="outlined" class="bg-black" rounded dense  >Änderungen verwerfen</v-btn>
+            </div>
+          </v-card>
+        </v-col>
+
+        <!-- Account Aktionen -->
+        <v-col cols="12" md="5">
+          <v-card class="content-card danger-card" elevation="2">
+            <h3>Account-Aktionen</h3>
+            <p>Diese Aktionen betreffen deinen Zugang.</p>
+
+            <div class="mt-6">
+              <v-btn color="white bg-red" variant="outlined" block>
+                Account löschen
+              </v-btn>
+            </div>
           </v-card>
         </v-col>
       </v-row>
+
     </v-container>
-  </layout>
+  </div>
 </template>
+
 <script setup>
-
-
-import useVuelidate from '@vuelidate/core';
-import { required, email } from '@vuelidate/validators';
-import { reactive, onMounted } from 'vue';
-import { loadUserData } from '@/utils/loadUser';
+import { reactive,ref,computed,onMounted,onBeforeUnmount, onBeforeMount } from "vue";
+import { useVuelidate } from "@vuelidate/core";
+import { email, required } from "@vuelidate/validators";
+import { loadUserData } from "@/utils/loadUser";
 
 const password = String;
+const drawer = ref(true);
+const isMobile = ref(false);
 
 const initialState = {
-  name: "",
+      name: "",
   email: "",
-  password: "",
+  password: "", 
+  location:""
 };
+
 
 const state = reactive({
   ...initialState,
-});
-
-// Prefill form with user data on mount
-onMounted(async () => {
-  try {
-    const user = await loadUserData();
-    if (user) {
-      state.name = user.username || user.name || "";
-      state.email = user.email || "";
-      // Never prefill password for security reasons
-    }
-  } catch (e) {
-    // Optionally handle error
-    console.error("Failed to load user data", e);
-  }
 });
 
 const rules = {
   name: { required },
   email: { required, email },
   password: { required, password },
+
 };
 
 const v$ = useVuelidate(rules, state);
+
 
 function clear() {
   v$.value.$reset();
@@ -119,104 +143,176 @@ async function fetchData() {
   if (!res.ok) throw new Error("HTTP " + res.status + " " + res.statusText);
   return await res.json();
 }
+
+const userName = ref("user");
+const userInitials = ref("u");
+const userEmail = ref("user@mail.com");
+//const userPassword = ref("")
+
+async function loadUser() {
+    const user = await loadUserData();
+    userName.value = user?.username || "user";
+    userInitials.value = userName.value[0];
+    userEmail.value = user?.email || "user@mail.com";
+    
+};
+onBeforeMount(() => { 
+  loadUser(userName); 
+  loadUserData();
+});
+onMounted(() => {
+  updateIsMobile();
+  window.addEventListener("resize", updateIsMobile);
+
+
+});
+const updateIsMobile = () => {
+  isMobile.value = window.matchMedia("(max-width: 700px)").matches;
+  if (isMobile.value) drawer.value = false;
+};
+onBeforeUnmount(() => {
+  window.removeEventListener("resize", updateIsMobile);
+});
+
+const show1 = ref(false)
+const show2 = ref(true)
+
+
 </script>
 
-<style>
-.profile-bg-2 {
+<style lang="scss" scoped>
+
+/* proportions and colors */
+$sidebar-bg: #a8e6b8;
+$topbar-bg: #bcefc2;
+$text-primary:	#28282B;
+$border-dark: #28282B;
+$farbe: #f6fbf9;
+
+$topbar-height: 120px;
+$profile-size: 48px;
+$app-title-size: 38px;
+
+.profile-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #f8fafc 0%, #e0f7fa 100%);
+  padding: 60px 0;
+
+  background: linear-gradient(
+    135deg,
+    #f6fbf9 0%,
+    #e8f6f1 50%,
+    #d8eee6 100%
+  );
+}
+
+/* HEADER */
+
+.profile-header {
+  padding: 25px 35px;
+  border-radius: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+
+    h2 {
+      margin: 0;
+      font-weight: 600;
+    }
+
+    p {
+      margin: 0;
+      color: #666;
+    }
+
+    small {
+      color: #999;
+    }
+  }
+
+  .header-right {
+    display: flex;
+    gap: 15px;
+  }
+}
+
+.avatar {
+  background: linear-gradient(135deg, #4fc3a1, #2bbbad);
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+/* CONTENT CARDS */
+
+.content-card {
+  padding: 30px;
+  border-radius: 18px;
+  background: white;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.04);
+
+  h3 {
+    margin-bottom: 20px;
+    font-weight: 600;
+  }
+
+  .actions {
+    margin-top: 25px;
+    display: flex;
+    gap: 15px;
+  }
+}
+
+/* Danger Card */
+
+.danger-card {
+  border: 1px solid #ffe5e5;
+  background: #fffdfd;
+
+  h3 {
+    color: #c62828;
+  }
+}
+
+.header-left {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 25px;
 }
-.profile-card-large {
-  max-width: 700px;
-  width: 100%;
-  min-height: 500px;
-  border-radius: 18px;
-  box-shadow: 0 8px 32px rgba(80, 200, 180, 0.12);
-  background: #fff;
+
+.avatar-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  position: relative;
 }
-.profile-title {
-  font-size: 2.2rem;
-  font-weight: 700;
-  color: #1976d2;
-  letter-spacing: 1px;
+
+.back-btn {
+  margin-bottom: 8px;
+  color: #333;
 }
-.profile-input-large {
-  width: 350px;
-  background: #f8fafc;
-  border-radius: 8px;
-  font-size: 1.15rem;
-  padding: 10px 0;
-  box-shadow: none !important;
-}
-.profile-btn-large {
-  min-width: 180px;
-  font-size: 1.15rem;
+
+.avatar {
+  background: linear-gradient(135deg, #4fc3a1, #2bbbad);
+  color: white;
   font-weight: 600;
-  border-radius: 8px;
-  margin-top: 12px;
-  padding: 12px 0;
+  font-size: 20px;
 }
-.profile-bg-centered {
-  min-height: 100vh;
-  background: linear-gradient(180deg, #f8fafc 0%, #e0f7fa 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+
+.user-info {
+  h3 {
+    margin: 0;
+    font-weight: 500;
+  }
+
+  small {
+    color: #777;
+  }
 }
-.profile-card-centered {
-  border-radius: 14px;
-  box-shadow: 0 4px 18px rgba(80, 200, 180, 0.10);
-  background: #fff;
-  padding: 24px 18px 18px 18px;
-  margin: 0 auto;
-}
-.profile-title {
-  font-size: 1.6rem;
-  font-weight: 600;
-  color: #1976d2;
-  letter-spacing: 0.5px;
-}
-.profile-input {
-  width: 220px;
-  background: #f8fafc;
-  border-radius: 6px;
-}
-.profile-btn-centered {
-  min-width: 120px;
-  font-size: 1rem;
-  font-weight: 500;
-  border-radius: 6px;
-  margin-top: 6px;
-}
-.profile-card {
-  border-radius: 14px;
-  box-shadow: 0 4px 18px rgba(80, 200, 180, 0.10);
-  background: #fff;
-  padding: 24px 18px 18px 18px;
-}
-.profile-title {
-  font-size: 1.6rem;
-  font-weight: 600;
-  color: #1976d2;
-  letter-spacing: 0.5px;
-}
-.profile-input {
-  width: 220px;
-  background: #f8fafc;
-  border-radius: 6px;
-}
-.profile-btn {
-  min-width: 120px;
-  font-size: 1rem;
-  font-weight: 500;
-  border-radius: 6px;
-  margin-top: 6px;
-}
-</style>
+</style>  
