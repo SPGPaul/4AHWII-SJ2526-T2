@@ -60,7 +60,7 @@ async function buildCategoryTrends(items: any[], monthsCount = 3) {
     const key = monthKey(d);
     // only keep last N months
     if (!months.includes(key)) continue;
-    const cat = it?.category ?? "Unbekannt";
+    const cat = it?.categoryLabel ?? it?.category_name ?? it?.category ?? "Unbekannt";
     agg[cat] = agg[cat] || {};
     agg[cat][key] = (agg[cat][key] || 0) + amt;
   }
@@ -92,7 +92,9 @@ async function renderPieChart() {
     const v = it?.amount;
     return typeof v === "number" ? v : v ? Number(v) : 0;
   });
-  const displayedCategory = items.map((it: any) => it?.category ?? "Unbekannt");
+  const displayedCategory = items.map(
+    (it: any) => it?.categoryLabel ?? it?.category_name ?? it?.category ?? "Unbekannt",
+  );
   const formatDateShort = (iso: any) => {
     try {
       const d = new Date(iso);

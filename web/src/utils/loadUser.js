@@ -1,3 +1,5 @@
+import { enrichReceiptsWithCategories } from "./receipt-category";
+
 export async function loadUserData() {
   const token = localStorage.getItem("token");
   if (!token) return;
@@ -16,5 +18,13 @@ export async function loadUserData() {
       res.statusText;
     throw new Error(message || "Login failed");
   }
-  return body;
+
+  const receipts = enrichReceiptsWithCategories(
+    Array.isArray(body?.receipts) ? body.receipts : [],
+  );
+
+  return {
+    ...body,
+    receipts,
+  };
 }

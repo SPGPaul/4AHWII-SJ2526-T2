@@ -1,4 +1,8 @@
 services:
+  backend:
+    build: ./backend
+    ports:
+      - "8001:8000"
   web:
     restart: unless-stopped
     build:
@@ -41,7 +45,7 @@ services:
     volumes:
       - ./strapi-db/config:/opt/app/config
       - ./strapi-db/src:/opt/app/src
-      - ./strapi-db/package.json:/opt/package.json
+      - ./strapi-db/package.json:/opt/app
       - ./strapi-db/yarn.lock:/opt/yarn.lock
       - ./.env:/opt/app/.env
       - ./strapi-db/public/uploads:/opt/app/public/uploads
