@@ -56,16 +56,22 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      "/api": {
-        target: "http://localhost:8001", // Backend - KI Funktionen
+      // Python AI backend — only the receipt-processing endpoint
+      "/api/receipt": {
+        target: "http://localhost:8001",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
-      // "/database": {
-      //   target: "https://elegant-eggs-b247740f2b.strapiapp.com/api", // Backend - Datenbank
-      //   changeOrigin: true,
-      //   rewrite: (path) => path.replace(/^\/database/, ""),
-      // },
+      // Strapi REST API (auth, users, receipts, categories, etc.)
+      "/api": {
+        target: "http://localhost:1337",
+        changeOrigin: true,
+      },
+      // Strapi uploaded files / media
+      "/uploads": {
+        target: "http://localhost:1337",
+        changeOrigin: true,
+      },
     },
   },
   css: {
