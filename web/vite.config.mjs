@@ -51,10 +51,22 @@ export default defineConfig({
     alias: {
       "@": fileURLToPath(new URL("src", import.meta.url)),
     },
-    extensions: [".js", ".json", ".jsx", ".mjs", ".ts", ".tsx", ".vue"],
+    extensions: [".js", ".json", ".jsx", ".mjs", ".ts", ".tsx", ".vue",".scss"],
   },
   server: {
     port: 3000,
+    proxy: {
+      "/api": {
+        target: "http://localhost:8001", // Backend - KI Funktionen
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ""),
+      },
+      // "/database": {
+      //   target: "https://elegant-eggs-b247740f2b.strapiapp.com/api", // Backend - Datenbank
+      //   changeOrigin: true,
+      //   rewrite: (path) => path.replace(/^\/database/, ""),
+      // },
+    },
   },
   css: {
     preprocessorOptions: {
