@@ -2,6 +2,10 @@
   <div class="bill-overview">
     <div class="header-row">
       <h1>Rechnungsübersicht</h1>
+      
+    </div>
+
+    <v-container fluid class="cards-wrap">
       <v-text-field
         v-model="searchQuery"
         label="Suche"
@@ -10,9 +14,6 @@
         append-inner-icon="mdi-magnify"
         class="search-field"
       />
-    </div>
-
-    <v-container fluid class="cards-wrap">
       <v-row>
         <v-col
           v-for="item in filteredRechnung"
@@ -26,7 +27,7 @@
             <v-img :src="item.img" height="160" class="bill-card-img" contain />
             <v-card-text class="bill-card-body">
               <div class="trans-title">{{ item.transaktion }}</div>
-              <div class="trans-meta">Beleg</div>
+              <div class="trans-meta">{{ item.categoryLabel || "Sonstiges" }}</div>
             </v-card-text>
           </v-card>
         </v-col>
@@ -61,36 +62,67 @@ export default {
       searchQuery: "",
       dialog: false,
       selected: null,
-      desserts: [
-        {
-          img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp",
-          transaktion: "AMZ - GGL",
-        },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 237 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 262 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 305 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 356 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 375 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 392 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 408 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 452 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 518 },
-      ],
+      bills: [],
+      loading: false,
+      error: null,
     };
   },
   computed: {
     filteredRechnung() {
-      if (!this.searchQuery) return this.desserts;
-      return this.desserts.filter((item) =>
-        item.transaktion.toString().toLowerCase().includes(this.searchQuery.toLowerCase())
+      if (!this.searchQuery) return this.bills;
+      return this.bills.filter((item) =>
+        item.transaktion?.toString().toLowerCase().includes(this.searchQuery.toLowerCase())
       );
     },
   },
   methods: {
+    async fetchBills() {
+      this.loading = true;
+      this.error = null;
+      try {
+        // Nutze loadUserData wie in Analysis_area.vue
+        const { loadUserData } = await import('@/utils/loadUser');
+        const data = await loadUserData();
+        let items = Array.isArray(data?.receipts) ? data.receipts : [];
+        // Doppelte filtern
+        const seen = new Set();
+        items = items.filter(item => {
+          if (!item.documentId) return true;
+          if (seen.has(item.documentId)) return false;
+          seen.add(item.documentId);
+          return true;
+        });
+        // Mapping für img
+        const baseUrl = "https://elegant-eggs-b247740f2b.strapiapp.com";
+        this.bills = items.map(item => {
+          let imgSrc = '';
+          if (item.img) {
+            if (typeof item.img === 'string') {
+              imgSrc = item.img.startsWith('http') ? item.img : `${baseUrl}${item.img}`;
+            } else if (typeof item.img === 'object' && item.img.url) {
+              imgSrc = item.img.url.startsWith('http') ? item.img.url : `${baseUrl}${item.img.url}`;
+            }
+          }
+          return {
+            img: imgSrc,
+            transaktion: item.transaktion || item.title || '',
+            categoryLabel: item.categoryLabel || item.category_name || item.category || 'Sonstiges',
+            documentId: item.documentId || null
+          };
+        });
+      } catch (e) {
+        this.error = e.message || "Fehler beim Laden der Rechnungen.";
+      } finally {
+        this.loading = false;
+      }
+    },
     openReceipt(item) {
       this.selected = item;
       this.dialog = true;
     },
+  },
+  mounted() {
+    this.fetchBills();
   },
 };
 </script>
@@ -119,8 +151,9 @@ export default {
   font-weight: 700;
 }
 .search-field {
-  width: 360px;
-  max-width: 45%;
+  width: 1130px;
+  color: #0b2b18;
+  padding-bottom: 12px;
 }
 .cards-wrap {
   padding: 8px 2px;
@@ -188,4 +221,3 @@ export default {
 }
 
 </style>
-
