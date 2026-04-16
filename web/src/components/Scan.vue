@@ -2,6 +2,51 @@
   <v-container
     style="z-index: 10; position: relative; padding: 140px; min-height: 500px"
   >
+    <v-card class="mb-4 pa-4" elevation="2">
+      <v-row class="align-center">
+        <v-col cols="12" md="6" class="d-flex ga-2 flex-wrap">
+          <v-btn
+            color="secondary"
+            variant="tonal"
+            @click="startCamera"
+            :disabled="cameraRunning"
+          >
+            <v-icon start>mdi-video</v-icon>
+            Kamera starten
+          </v-btn>
+          <v-btn
+            color="primary"
+            variant="elevated"
+            @click="captureImage"
+            :disabled="!cameraRunning || loading"
+          >
+            <v-icon start>mdi-camera</v-icon>
+            Foto aufnehmen
+          </v-btn>
+          <v-btn
+            color="grey"
+            variant="text"
+            @click="stopCamera"
+            :disabled="!cameraRunning"
+          >
+            Kamera stoppen
+          </v-btn>
+        </v-col>
+      </v-row>
+      <video ref="cameraVideo" class="scan-video mt-3" autoplay playsinline muted />
+      <canvas ref="cameraCanvas" style="display: none" />
+      <v-alert
+        v-if="extractedText"
+        type="info"
+        variant="tonal"
+        density="comfortable"
+        class="mt-3"
+      >
+        <strong>Extrahierter Text (OCR):</strong>
+        <pre class="ocr-preview">{{ extractedText }}</pre>
+      </v-alert>
+    </v-card>
+
     <!-- UPLOAD -->
     <v-file-input
       v-model="selectedFile"
@@ -266,6 +311,15 @@
       <h3 class="mt-4 grey--text">Noch keinen Beleg hochgeladen</h3>
       <p>Wähle ein Foto aus, um zu starten</p>
     </v-card>
+
+    <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      timeout="3500"
+      location="top"
+    >
+      {{ snackbar.text }}
+    </v-snackbar>
   </v-container>
 </template>
 
@@ -274,6 +328,7 @@ import {
   classifyReceiptCategory,
   PREDEFINED_CATEGORIES,
 } from "@/utils/receipt-category";
+import { preprocessCanvas, ocrSorted } from "@/utils/ocr-helpers";
 
 export default {
   data() {
@@ -283,6 +338,14 @@ export default {
       result: null,
       loading: false,
       saving: false,
+      cameraStream: null,
+      cameraRunning: false,
+      extractedText: "",
+      snackbar: {
+        show: false,
+        text: "",
+        color: "error",
+      },
 
       // Tabs
       activeTab: 0,
@@ -374,6 +437,9 @@ export default {
   async mounted() {
     await this.fetchDropdownData();
   },
+  beforeUnmount() {
+    this.stopCamera();
+  },
 
   methods: {
     toNumber(value) {
@@ -385,6 +451,9 @@ export default {
         .replace(",", ".");
       const parsed = Number(normalized);
       return Number.isFinite(parsed) ? parsed : null;
+    },
+    notify(text, color = "error") {
+      this.snackbar = { show: true, text, color };
     },
 
     extractEntityLabel(entity, type) {
@@ -469,11 +538,79 @@ export default {
         this.fillFormFromRawData(data.data);
       } catch (error) {
         console.error("❌ Upload Fehler:", error);
-        alert("Beleg konnte nicht verarbeitet werden.");
+        this.notify("Beleg konnte nicht verarbeitet werden.");
         window.scrollTo({ top: 0, behavior: "smooth" });
       } finally {
         this.loading = false;
       }
+    },
+    async startCamera() {
+      if (!navigator?.mediaDevices?.getUserMedia) {
+        this.notify("Kamera wird von diesem Browser nicht unterstützt.");
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+        });
+        this.cameraStream = stream;
+        this.cameraRunning = true;
+        this.$refs.cameraVideo.srcObject = stream;
+        await this.$refs.cameraVideo.play();
+      } catch (error) {
+        console.error("Kamera konnte nicht gestartet werden:", error);
+        this.notify("Kamera konnte nicht gestartet werden.");
+      }
+    },
+    stopCamera() {
+      if (this.cameraStream) {
+        for (const track of this.cameraStream.getTracks()) {
+          track.stop();
+        }
+      }
+      this.cameraStream = null;
+      this.cameraRunning = false;
+      if (this.$refs.cameraVideo) {
+        this.$refs.cameraVideo.srcObject = null;
+      }
+    },
+    async captureImage() {
+      const video = this.$refs.cameraVideo;
+      const canvas = this.$refs.cameraCanvas;
+      if (!video || !canvas || !video.videoWidth || !video.videoHeight) {
+        this.notify("Kamera ist noch nicht bereit.");
+        return;
+      }
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext("2d");
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      try {
+        const processedCanvas = await preprocessCanvas(canvas);
+        this.extractedText = await ocrSorted(processedCanvas);
+      } catch (error) {
+        console.error("OCR fehlgeschlagen:", error);
+        this.extractedText = "";
+      }
+
+      const blob = await new Promise((resolve, reject) => {
+        canvas.toBlob((resultBlob) => {
+          if (!resultBlob) {
+            reject(new Error("Kein Bild erstellt"));
+            return;
+          }
+          resolve(resultBlob);
+        }, "image/jpeg", 0.95);
+      });
+
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      this.selectedFile = new File([blob], `camera-receipt-${timestamp}.jpg`, {
+        type: "image/jpeg",
+      });
+      await this.uploadReceipt();
     },
 
     async fetchLocations(search = "") {
@@ -767,7 +904,7 @@ export default {
 
     async saveReceipt() {
       if (!this.formValid) {
-        alert("Bitte alle Pflichtfelder ausfüllen!");
+        this.notify("Bitte alle Pflichtfelder ausfüllen!");
         return;
       }
 
@@ -846,18 +983,18 @@ export default {
         }
 
         if (submission.ok && submission.result.data?.id) {
-          alert("✅ Beleg gespeichert! ID: " + submission.result.data.id);
+          this.notify(`✅ Beleg gespeichert! ID: ${submission.result.data.id}`, "success");
           this.resetForm();
         } else {
           console.error("Backend Response:", submission.result);
-          alert(
+          this.notify(
             "❌ Server Fehler: " +
               (submission.result?.error?.message || "Speichern nicht möglich"),
           );
         }
       } catch (error) {
         console.error("💥 Fehler:", error);
-        alert("❌ Speichern fehlgeschlagen");
+        this.notify("❌ Speichern fehlgeschlagen");
       } finally {
         this.saving = false;
       }
@@ -901,5 +1038,19 @@ export default {
 <style scoped>
 .item-row:hover {
   background-color: #f5f5f5;
+}
+
+.scan-video {
+  width: 100%;
+  max-width: 520px;
+  border-radius: 10px;
+  background: #111;
+  min-height: 240px;
+}
+
+.ocr-preview {
+  white-space: pre-wrap;
+  margin: 8px 0 0;
+  font-size: 0.85rem;
 }
 </style>

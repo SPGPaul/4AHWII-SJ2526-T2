@@ -1,6 +1,6 @@
 <template>
   <v-app
-    :class="{ 'is-mobile': isMobile }"
+    :class="{ 'is-mobile': isMobile, 'theme-dark': isDark }"
     :style="{ '--drawer-width': drawerWidth + 'px' }"
   >
     <!-- top bar -->
@@ -14,6 +14,15 @@
         Rechnungsradar
       </v-toolbar-title>
 
+      <v-btn
+        icon
+        variant="text"
+        class="mx-2"
+        :title="isDark ? 'Hellmodus aktivieren' : 'Dunkelmodus aktivieren'"
+        @click="toggleTheme"
+      >
+        <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
+      </v-btn>
 
        <!-- Avatar menu ersetzt den runden Button -->
   <v-menu min-width="240" offset-y>
@@ -104,9 +113,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { useTheme } from "vuetify";
 import { loadUserData } from "@/utils/loadUser";
 
 const drawer = ref(true);
+const theme = useTheme();
+
+const isDark = computed(() => theme.global.current.value.dark);
 
 const isMobile = ref(false);
 const drawerWidth = computed(() => (isMobile.value ? 280 : 120));
@@ -125,6 +138,12 @@ async function loadUser() {
 function logout(){
   localStorage.removeItem("token");
   window.location.href = "/";
+}
+
+function toggleTheme() {
+  const nextTheme = theme.global.current.value.dark ? "light" : "dark";
+  theme.global.name.value = nextTheme;
+  localStorage.setItem("theme-preference", nextTheme);
 }
 
 const updateIsMobile = () => {
@@ -270,11 +289,33 @@ $app-title-size: 38px;
    Put your spacing into the inner wrap instead.
 */
 .main-area {
-  background: white;
+  background: rgb(var(--v-theme-background));
   box-sizing: border-box;
   /* remove the old calculated paddings */
   padding: unset;
   min-height: 100%;
+}
+
+.theme-dark {
+  .top-bar {
+    background-color: #1f2a1f !important;
+    border-bottom-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .app-title {
+    color: #e9f3eb !important;
+  }
+
+  .left-drawer {
+    background-color: #253025 !important;
+    border-right-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .drawer-item,
+  .drawer-item .v-list-item-title,
+  .drawer-item .v-icon {
+    color: #e9f3eb !important;
+  }
 }
 
 /* add page padding inside the wrap (after drawer/appbar offset) */

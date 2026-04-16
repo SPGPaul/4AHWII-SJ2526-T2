@@ -6,14 +6,39 @@
     </div>
 
     <v-container fluid class="cards-wrap">
-      <v-text-field
-        v-model="searchQuery"
-        label="Suche"
-        clearable
-        hide-details
-        append-inner-icon="mdi-magnify"
-        class="search-field"
-      />
+      <v-row class="mb-2">
+        <v-col cols="12" md="6">
+          <v-text-field
+            v-model="searchQuery"
+            label="Suche"
+            clearable
+            hide-details
+            append-inner-icon="mdi-magnify"
+            class="search-field"
+          />
+        </v-col>
+        <v-col cols="12" sm="6" md="3">
+          <v-select
+            v-model="selectedCategory"
+            :items="categoryOptions"
+            label="Kategorie filtern"
+            hide-details
+            clearable
+            variant="outlined"
+            density="comfortable"
+          />
+        </v-col>
+        <v-col cols="12" sm="6" md="3">
+          <v-select
+            v-model="sortBy"
+            :items="sortOptions"
+            label="Sortieren"
+            hide-details
+            variant="outlined"
+            density="comfortable"
+          />
+        </v-col>
+      </v-row>
       <v-row>
         <v-col
           v-for="item in filteredRechnung"
@@ -28,6 +53,10 @@
             <v-card-text class="bill-card-body">
               <div class="trans-title">{{ item.transaktion }}</div>
               <div class="trans-meta">{{ item.categoryLabel || "Sonstiges" }}</div>
+              <div class="trans-meta">
+                {{ formatDate(item.date) }}
+                <span v-if="item.amount !== null">· {{ formatAmount(item.amount) }}</span>
+              </div>
             </v-card-text>
           </v-card>
         </v-col>
@@ -60,22 +89,97 @@ export default {
   data() {
     return {
       searchQuery: "",
+      selectedCategory: null,
+      sortBy: "date-newest",
       dialog: false,
       selected: null,
       bills: [],
       loading: false,
       error: null,
+      sortOptions: [
+        { title: "Neueste zuerst", value: "date-newest" },
+        { title: "Älteste zuerst", value: "date-oldest" },
+        { title: "Betrag absteigend", value: "amount-desc" },
+        { title: "Betrag aufsteigend", value: "amount-asc" },
+        { title: "Name A-Z", value: "name-asc" },
+        { title: "Name Z-A", value: "name-desc" },
+      ],
     };
   },
   computed: {
+    categoryOptions() {
+      const categories = this.bills
+        .map((item) => item.categoryLabel || "Sonstiges")
+        .filter(Boolean);
+      return [...new Set(categories)].sort((a, b) => String(a).localeCompare(String(b), "de"));
+    },
     filteredRechnung() {
-      if (!this.searchQuery) return this.bills;
-      return this.bills.filter((item) =>
-        item.transaktion?.toString().toLowerCase().includes(this.searchQuery.toLowerCase())
-      );
+      const query = this.searchQuery.trim().toLowerCase();
+
+      let items = [...this.bills];
+      if (this.selectedCategory) {
+        items = items.filter((item) => (item.categoryLabel || "Sonstiges") === this.selectedCategory);
+      }
+
+      if (query) {
+        items = items.filter((item) => {
+          const fields = [
+            item.transaktion,
+            item.categoryLabel,
+            item.documentId,
+            item.date ? this.formatDate(item.date) : "",
+            item.amount !== null ? this.formatAmount(item.amount) : "",
+          ];
+          return fields.some((field) => String(field || "").toLowerCase().includes(query));
+        });
+      }
+
+      const sorted = [...items].sort((a, b) => {
+        switch (this.sortBy) {
+          case "date-oldest":
+            return this.toTimestamp(a.date) - this.toTimestamp(b.date);
+          case "date-newest":
+            return this.toTimestamp(b.date) - this.toTimestamp(a.date);
+          case "amount-asc":
+            if (a.amount === null && b.amount === null) return 0;
+            if (a.amount === null) return 1;
+            if (b.amount === null) return -1;
+            return a.amount - b.amount;
+          case "amount-desc":
+            if (a.amount === null && b.amount === null) return 0;
+            if (a.amount === null) return 1;
+            if (b.amount === null) return -1;
+            return b.amount - a.amount;
+          case "name-desc":
+            return String(b.transaktion || "").localeCompare(String(a.transaktion || ""), "de");
+          case "name-asc":
+          default:
+            return String(a.transaktion || "").localeCompare(String(b.transaktion || ""), "de");
+        }
+      });
+
+      return sorted;
     },
   },
   methods: {
+    toTimestamp(value) {
+      const parsed = new Date(value || 0).getTime();
+      return Number.isFinite(parsed) ? parsed : 0;
+    },
+    formatDate(value) {
+      if (!value) return "Kein Datum";
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.getTime())) return "Kein Datum";
+      return parsed.toLocaleDateString("de-AT");
+    },
+    formatAmount(value) {
+      const amount = Number(value);
+      if (!Number.isFinite(amount)) return "—";
+      return new Intl.NumberFormat("de-AT", {
+        style: "currency",
+        currency: "EUR",
+      }).format(amount);
+    },
     async fetchBills() {
       this.loading = true;
       this.error = null;
@@ -107,7 +211,9 @@ export default {
             img: imgSrc,
             transaktion: item.transaktion || item.title || '',
             categoryLabel: item.categoryLabel || item.category_name || item.category || 'Sonstiges',
-            documentId: item.documentId || null
+            documentId: item.documentId || null,
+            date: item.date || item.createdAt || null,
+            amount: this.toNumber(item.summe ?? item.amount ?? item.total),
           };
         });
       } catch (e) {
@@ -119,6 +225,10 @@ export default {
     openReceipt(item) {
       this.selected = item;
       this.dialog = true;
+    },
+    toNumber(value) {
+      const parsed = Number(String(value ?? "").replace(",", "."));
+      return Number.isFinite(parsed) ? parsed : null;
     },
   },
   mounted() {
@@ -133,7 +243,8 @@ export default {
   margin: 0 auto;
   padding: 24px;
   box-sizing: border-box;
-  background: #ffffff;
+  background: rgb(var(--v-theme-surface));
+  color: rgb(var(--v-theme-on-surface));
 }
 .header-row {
   display: flex;
@@ -146,14 +257,12 @@ export default {
 }
 .header-row h1 {
   margin: 0;
-  color: #0b2b18;
+  color: rgb(var(--v-theme-on-surface));
   font-size: 2rem;
   font-weight: 700;
 }
 .search-field {
-  width: 1130px;
-  color: #0b2b18;
-  padding-bottom: 12px;
+  width: 100%;
 }
 .cards-wrap {
   padding: 8px 2px;
@@ -185,24 +294,24 @@ export default {
 }
 .trans-title {
   font-weight: 700;
-  color: #f1f1f1;
+  color: rgb(var(--v-theme-on-surface));
   font-size: 1rem;
 }
 .trans-meta {
   font-size: 0.85rem;
-  color: #ffffff;
+  color: rgba(var(--v-theme-on-surface), 0.72);
   margin-top: 6px;
 }
 .no-data {
   padding: 28px;
   text-align: center;
-  color: #fafafa;
+  color: rgba(var(--v-theme-on-surface), 0.8);
 }
 
 @media (max-width: 900px) {
   .search-field {
-    max-width: 50%;
-    width: 240px;
+    max-width: 100%;
+    width: 100%;
   }
 }
 
