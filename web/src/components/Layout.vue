@@ -17,9 +17,9 @@
       <v-btn
         icon
         variant="text"
-        class="mx-2"
         :title="isDark ? 'Hellmodus aktivieren' : 'Dunkelmodus aktivieren'"
         @click="toggleTheme"
+        style="position: absolute; right: 72px; top: 50%; transform: translateY(-50%); z-index: 10;"
       >
         <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
       </v-btn>
