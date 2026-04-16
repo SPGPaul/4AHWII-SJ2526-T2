@@ -1,10 +1,11 @@
 import { enrichReceiptsWithCategories } from "./receipt-category";
+import { STRAPI_URL } from "./strapi";
 
 export async function loadUserData() {
   const token = localStorage.getItem("token");
   if (!token) return;
   const res = await fetch(
-    "https://elegant-eggs-b247740f2b.strapiapp.com/api/users/me?populate=receipts",
+    `${STRAPI_URL}/api/users/me?populate=receipts`,
     {
       headers: { Authorization: `Bearer ${token}` },
     }

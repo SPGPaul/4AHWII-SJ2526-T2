@@ -91,6 +91,7 @@ import { reactive,ref,computed,onMounted,onBeforeUnmount, onBeforeMount } from "
 import { useVuelidate } from "@vuelidate/core";
 import { email, required } from "@vuelidate/validators";
 import { loadUserData } from "@/utils/loadUser";
+import { STRAPI_URL } from "@/utils/strapi";
 
 const password = String;
 const drawer = ref(true);
@@ -128,10 +129,8 @@ function clear() {
 
 // Alle verwendeten Methoden
 async function fetchData() {
-  const apiUrl =
-    "https://elegant-eggs-b247740f2b.strapiapp.com/api/Rechnungs-Radar-Users";
-  const token =
-    "54a258000325fcbff04e65b292fecd2ca70258552324762fd2520e1932269765803183eb47586c2203f12b3abd7c7dbbe3dffe729c8334508eeba14656a85aa5bb7441ec939788a76a8a7e6066b1973362e5cdb6770a50dbecf0d74a4bcebe7c650eb54f08b757e0770003032e5817aa26dc6664c373e2c2e8667888d2d3f2c1";
+  const apiUrl = `${STRAPI_URL}/api/Rechnungs-Radar-Users`;
+  const token = localStorage.getItem("token");
   const res = await fetch(apiUrl, {
     method: "GET",
     headers: {

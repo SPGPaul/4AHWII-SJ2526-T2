@@ -11,6 +11,7 @@ import { UniversalTransition } from "echarts/features";
 import * as echarts from "echarts/core";
 import { onMounted, ref, onBeforeUnmount } from "vue";
 import { loadUserData } from "@/utils/loadUser";
+import { STRAPI_URL } from "@/utils/strapi";
 
 async function parseChartData(): Promise<any[]> {
   const data = await loadUserData();
@@ -201,7 +202,7 @@ async function refreshStats() {
 
 async function downloadImage(assetId = 1): Promise<string | null> {
   try {
-    const base = "https://elegant-eggs-b247740f2b.strapiapp.com";
+    const base = STRAPI_URL;
     // first fetch metadata to get the file URL
     const metaRes = await fetch(`${base}/api/download/files/${assetId}`);
     if (!metaRes.ok)

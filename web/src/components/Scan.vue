@@ -329,11 +329,12 @@ import {
   PREDEFINED_CATEGORIES,
 } from "@/utils/receipt-category";
 import { preprocessCanvas, ocrSorted } from "@/utils/ocr-helpers";
+import { STRAPI_URL } from "@/utils/strapi";
 
 export default {
   data() {
     return {
-      apiBase: "https://elegant-eggs-b247740f2b.strapiapp.com",
+      apiBase: STRAPI_URL,
       selectedFile: null,
       result: null,
       loading: false,

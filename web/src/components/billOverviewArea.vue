@@ -84,6 +84,7 @@
 </template>
 
 <script>
+import { STRAPI_URL } from "@/utils/strapi";
 export default {
   name: "BillOverviewArea",
   data() {
@@ -197,7 +198,7 @@ export default {
           return true;
         });
         // Mapping für img
-        const baseUrl = "https://elegant-eggs-b247740f2b.strapiapp.com";
+        const baseUrl = STRAPI_URL;
         this.bills = items.map(item => {
           let imgSrc = '';
           if (item.img) {
