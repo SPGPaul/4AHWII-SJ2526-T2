@@ -3,10 +3,12 @@ from transformers import DonutProcessor, VisionEncoderDecoderModel
 from PIL import Image, UnidentifiedImageError
 import torch
 import re
+import logging
 from PIL import ImageEnhance
 
 MODEL_NAME = "naver-clova-ix/donut-base-finetuned-cord-v2"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+logger = logging.getLogger(__name__)
 
 def enhance_receipt(image):
     image = image.resize((1024, 1024), Image.LANCZOS)
@@ -48,7 +50,8 @@ def parse_price_value(raw_price):
 
     try:
         return float(cleaned)
-    except ValueError:
+    except ValueError as exc:
+        logger.debug("Unable to parse price value '%s': %s", raw_price, exc)
         return None
 
 def clean_receipt_data(raw_data):
@@ -87,7 +90,7 @@ def clean_receipt_data(raw_data):
 
         parsed_price = parse_price_value(price)
         if parsed_price is not None:
-            all_prices.append(parsed_price)
+            all_prices.append((parsed_price, price.strip()))
             
         # SUMME = GRÖSSTER Betrag mit "SUMME"/"TOTAL"
         if "SUMME" in name or "TOTAL" in name:
@@ -102,7 +105,7 @@ def clean_receipt_data(raw_data):
     
     # FALLBACK: GRÖSSTER Preis = Summe (wenn "SUMME" fehlt)
     if not totals.get("summe") and all_prices:
-        totals["summe"] = f"{max(all_prices):.2f}"
+        totals["summe"] = max(all_prices, key=lambda entry: entry[0])[1]
     
     return {
         "items": items,
@@ -154,7 +157,8 @@ async def parse_receipt(file: UploadFile = File(...)):
     sequence = re.sub(r"<.*?>", "", sequence, count=1).strip()
     try:
         json_result = processor.token2json(sequence)
-    except (ValueError, TypeError, KeyError):
+    except (ValueError, TypeError, KeyError) as exc:
+        logger.warning("Failed to convert model output to JSON: %s", exc)
         json_result = []
     if not isinstance(json_result, list):
         json_result = []
