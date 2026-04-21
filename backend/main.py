@@ -22,7 +22,30 @@ def parse_price_value(raw_price):
     if not isinstance(raw_price, str):
         return None
 
-    cleaned = re.sub(r"[^\d.,-]", "", raw_price).replace(",", ".")
+    cleaned = re.sub(r"[^\d.,-]", "", raw_price)
+    if not cleaned:
+        return None
+
+    is_negative = cleaned.startswith("-")
+    cleaned = cleaned.lstrip("-")
+
+    if "," in cleaned and "." in cleaned:
+        last_dot = cleaned.rfind(".")
+        last_comma = cleaned.rfind(",")
+        decimal_index = max(last_dot, last_comma)
+        integer_part = re.sub(r"[.,]", "", cleaned[:decimal_index])
+        decimal_part = re.sub(r"[.,]", "", cleaned[decimal_index + 1:])
+        cleaned = f"{integer_part}.{decimal_part}" if decimal_part else integer_part
+    elif "," in cleaned:
+        parts = cleaned.split(",")
+        cleaned = "".join(parts[:-1]) + f".{parts[-1]}" if len(parts) > 1 else parts[0]
+    elif "." in cleaned:
+        parts = cleaned.split(".")
+        cleaned = "".join(parts[:-1]) + f".{parts[-1]}" if len(parts) > 1 else parts[0]
+
+    if is_negative and cleaned:
+        cleaned = f"-{cleaned}"
+
     try:
         return float(cleaned)
     except ValueError:
@@ -101,7 +124,7 @@ async def parse_receipt(file: UploadFile = File(...)):
     try:
         image = Image.open(file.file).convert('RGB')
     except (UnidentifiedImageError, OSError, ValueError) as exc:
-        raise HTTPException(status_code=400, detail="Invalid image file. Please upload a valid PNG or JPEG receipt image.") from exc
+        raise HTTPException(status_code=400, detail="Invalid image file. Please upload a valid receipt image.") from exc
     
     #Bild vorverarbeiten
     image = enhance_receipt(image)
