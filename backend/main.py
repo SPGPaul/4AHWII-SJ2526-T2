@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from transformers import DonutProcessor, VisionEncoderDecoderModel
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 import torch
 import re
 from PIL import ImageEnhance
@@ -17,6 +17,16 @@ def enhance_receipt(image):
     image = enhancer.enhance(1.2)      # Schärfe +20%
     
     return image
+
+def parse_price_value(raw_price):
+    if not isinstance(raw_price, str):
+        return None
+
+    cleaned = re.sub(r"[^\d.,-]", "", raw_price).replace(",", ".")
+    try:
+        return float(cleaned)
+    except ValueError:
+        return None
 
 def clean_receipt_data(raw_data):
     if not isinstance(raw_data, list):
@@ -52,11 +62,9 @@ def clean_receipt_data(raw_data):
         if not name or not price:
             continue
 
-        cleaned = re.sub(r"[^\d.,-]", "", price).replace(",", ".")
-        try:
-            all_prices.append(float(cleaned))
-        except ValueError:
-            pass
+        parsed_price = parse_price_value(price)
+        if parsed_price is not None:
+            all_prices.append(parsed_price)
             
         # SUMME = GRÖSSTER Betrag mit "SUMME"/"TOTAL"
         if "SUMME" in name or "TOTAL" in name:
@@ -92,8 +100,8 @@ async def parse_receipt(file: UploadFile = File(...)):
     # 1. Bild laden
     try:
         image = Image.open(file.file).convert('RGB')
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail="Invalid image file") from exc
+    except (UnidentifiedImageError, OSError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="Invalid image file. Please upload a valid PNG or JPEG receipt image.") from exc
     
     #Bild vorverarbeiten
     image = enhance_receipt(image)
@@ -123,7 +131,7 @@ async def parse_receipt(file: UploadFile = File(...)):
     sequence = re.sub(r"<.*?>", "", sequence, count=1).strip()
     try:
         json_result = processor.token2json(sequence)
-    except Exception:
+    except (ValueError, TypeError, KeyError):
         json_result = []
     if not isinstance(json_result, list):
         json_result = []
