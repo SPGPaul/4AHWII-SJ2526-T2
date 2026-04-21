@@ -1,9 +1,12 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from transformers import DonutProcessor, VisionEncoderDecoderModel
 from PIL import Image
 import torch
 import re
-from PIL import Image, ImageEnhance
+from PIL import ImageEnhance
+
+MODEL_NAME = "naver-clova-ix/donut-base-finetuned-cord-v2"
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 def enhance_receipt(image):
     image = image.resize((1024, 1024), Image.LANCZOS)
@@ -16,30 +19,44 @@ def enhance_receipt(image):
     return image
 
 def clean_receipt_data(raw_data):
+    if not isinstance(raw_data, list):
+        return {"items": [], "totals": {}}
+
     items = []
     totals = {}
     all_prices = []
 
     for item in raw_data:
+        if not isinstance(item, dict):
+            continue
+
         name = ""
         price = ""
-        
+
+        price_data = item.get("price")
+
         # Name finden
         if isinstance(item.get("nm"), str):
             name = item["nm"].upper()
-        elif isinstance(item.get("price", {}).get("nm"), str):
-            name = item["price"]["nm"].upper()
-            
+        elif isinstance(price_data, dict) and isinstance(price_data.get("nm"), str):
+            name = price_data["nm"].upper()
+
         # Price finden  
-        if isinstance(item.get("price"), str):
+        if isinstance(price_data, str):
             price = item["price"]
-        elif isinstance(item.get("price", {}).get("unitprice"), str):
-            price = item["price"]["unitprice"]
+        elif isinstance(price_data, dict) and isinstance(price_data.get("unitprice"), str):
+            price = price_data["unitprice"]
         elif isinstance(item.get("unitprice"), str):
             price = item["unitprice"]
             
         if not name or not price:
             continue
+
+        cleaned = re.sub(r"[^\d.,-]", "", price).replace(",", ".")
+        try:
+            all_prices.append(float(cleaned))
+        except ValueError:
+            pass
             
         # SUMME = GRÖSSTER Betrag mit "SUMME"/"TOTAL"
         if "SUMME" in name or "TOTAL" in name:
@@ -54,8 +71,7 @@ def clean_receipt_data(raw_data):
     
     # FALLBACK: GRÖSSTER Preis = Summe (wenn "SUMME" fehlt)
     if not totals.get("summe") and all_prices:
-            cleaned_prices = [float(re.sub(r'[^\d.,]', '', p.replace(',', '.'))) for p in all_prices]
-            totals["summe"] = max(cleaned_prices)
+        totals["summe"] = f"{max(all_prices):.2f}"
     
     return {
         "items": items,
@@ -65,44 +81,52 @@ def clean_receipt_data(raw_data):
 # 1x beim Start laden (bleibt im RAM)
 # processor = DonutProcessor.from_pretrained("jinhybr/OCR-Donut-CORD")
 # model = VisionEncoderDecoderModel.from_pretrained("jinhybr/OCR-Donut-CORD")
-processor = DonutProcessor.from_pretrained("naver-clova-ix/donut-base-finetuned-cord-v2")
-model = VisionEncoderDecoderModel.from_pretrained("naver-clova-ix/donut-base-finetuned-cord-v2")
+processor = DonutProcessor.from_pretrained(MODEL_NAME)
+model = VisionEncoderDecoderModel.from_pretrained(MODEL_NAME).to(DEVICE)
+model.eval()
 
 app = FastAPI()
 
 @app.post("/receipt")  # ← Dein Vue fetcht hierhin
 async def parse_receipt(file: UploadFile = File(...)):
     # 1. Bild laden
-    image = Image.open(file.file).convert('RGB')
+    try:
+        image = Image.open(file.file).convert('RGB')
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail="Invalid image file") from exc
     
     #Bild vorverarbeiten
     image = enhance_receipt(image)
 
     # 2. Donut "task prompt" (sagt: "parse receipt")
     task_prompt = "<s_cord-v2>"  
-    decoder_input_ids = processor.tokenizer(task_prompt, return_tensors="pt").input_ids
+    decoder_input_ids = processor.tokenizer(task_prompt, return_tensors="pt").input_ids.to(DEVICE)
     
     # 3. Bild verarbeiten
     pixel_values = processor(image, return_tensors="pt").pixel_values
     
     # 4. Modell generiert JSON-String
-    outputs = model.generate(
-        pixel_values, 
-        decoder_input_ids=decoder_input_ids,
-        max_length=2048,      # ← Mehr Platz!
-        num_beams=5,          # ← Beam Search
-        temperature=0.1,      # ← Deterministischer
-        do_sample=False,
-        pad_token_id=processor.tokenizer.pad_token_id
-    )
+    with torch.inference_mode():
+        outputs = model.generate(
+            pixel_values.to(DEVICE), 
+            decoder_input_ids=decoder_input_ids,
+            max_length=2048,      # ← Mehr Platz!
+            num_beams=5,          # ← Beam Search
+            temperature=0.1,      # ← Deterministischer
+            do_sample=False,
+            pad_token_id=processor.tokenizer.pad_token_id
+        )
 
     
     # 5. JSON extrahieren
     sequence = processor.batch_decode(outputs, skip_special_tokens=True)[0]
     sequence = re.sub(r"<.*?>", "", sequence, count=1).strip()
-    json_result = processor.token2json(sequence)
-    print("🔍 RAW JSON:", json_result)  # ← DEBUG 1
+    try:
+        json_result = processor.token2json(sequence)
+    except Exception:
+        json_result = []
+    if not isinstance(json_result, list):
+        json_result = []
     processed = clean_receipt_data(json_result)
-    print("🔍 CLEANED:", processed)    # ← DEBUG 2
 
     return {"data": processed}
