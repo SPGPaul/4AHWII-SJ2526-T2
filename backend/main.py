@@ -9,6 +9,7 @@ from PIL import ImageEnhance
 MODEL_NAME = "naver-clova-ix/donut-base-finetuned-cord-v2"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 logger = logging.getLogger(__name__)
+ACTIVE_DEVICE = DEVICE
 
 def enhance_receipt(image):
     image = image.resize((1024, 1024), Image.LANCZOS)
@@ -116,7 +117,15 @@ def clean_receipt_data(raw_data):
 # processor = DonutProcessor.from_pretrained("jinhybr/OCR-Donut-CORD")
 # model = VisionEncoderDecoderModel.from_pretrained("jinhybr/OCR-Donut-CORD")
 processor = DonutProcessor.from_pretrained(MODEL_NAME)
-model = VisionEncoderDecoderModel.from_pretrained(MODEL_NAME).to(DEVICE)
+try:
+    model = VisionEncoderDecoderModel.from_pretrained(MODEL_NAME).to(ACTIVE_DEVICE)
+except RuntimeError as exc:
+    if ACTIVE_DEVICE == "cuda":
+        logger.warning("Model initialization on CUDA failed, falling back to CPU: %s", exc)
+        ACTIVE_DEVICE = "cpu"
+        model = VisionEncoderDecoderModel.from_pretrained(MODEL_NAME).to(ACTIVE_DEVICE)
+    else:
+        raise
 model.eval()
 
 app = FastAPI()
@@ -134,10 +143,10 @@ async def parse_receipt(file: UploadFile = File(...)):
 
     # 2. Donut "task prompt" (sagt: "parse receipt")
     task_prompt = "<s_cord-v2>"  
-    decoder_input_ids = processor.tokenizer(task_prompt, return_tensors="pt").input_ids.to(DEVICE)
+    decoder_input_ids = processor.tokenizer(task_prompt, return_tensors="pt").input_ids.to(ACTIVE_DEVICE)
     
     # 3. Bild verarbeiten
-    pixel_values = processor(image, return_tensors="pt").pixel_values.to(DEVICE)
+    pixel_values = processor(image, return_tensors="pt").pixel_values.to(ACTIVE_DEVICE)
     
     # 4. Modell generiert JSON-String
     with torch.inference_mode():
