@@ -103,12 +103,12 @@ async def parse_receipt(file: UploadFile = File(...)):
     decoder_input_ids = processor.tokenizer(task_prompt, return_tensors="pt").input_ids.to(DEVICE)
     
     # 3. Bild verarbeiten
-    pixel_values = processor(image, return_tensors="pt").pixel_values
+    pixel_values = processor(image, return_tensors="pt").pixel_values.to(DEVICE)
     
     # 4. Modell generiert JSON-String
     with torch.inference_mode():
         outputs = model.generate(
-            pixel_values.to(DEVICE), 
+            pixel_values, 
             decoder_input_ids=decoder_input_ids,
             max_length=2048,      # ← Mehr Platz!
             num_beams=5,          # ← Beam Search
