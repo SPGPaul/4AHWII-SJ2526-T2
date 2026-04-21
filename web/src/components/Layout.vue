@@ -4,7 +4,7 @@
     :style="{ '--drawer-width': drawerWidth + 'px' }"
   >
     <!-- top bar -->
-    <v-app-bar app class="top-bar text-black" flat>
+    <v-app-bar app class="top-bar" flat>
       <v-btn icon @click="drawer = !drawer" class="mx-2">
         <v-icon>mdi-menu</v-icon>
       </v-btn>
@@ -184,6 +184,7 @@ $app-title-size: 38px;
   padding-left: 12px;
   padding-right: 12px;
   overflow: visible;
+  color: $text-primary !important;
 }
 
 .app-title {
@@ -223,7 +224,7 @@ $app-title-size: 38px;
 .profile {
   font-size: 18px;
   line-height: 1;
-  color: #bcefc2;
+  color: #ffffff !important;
 }
 
 .left-drawer {
@@ -232,7 +233,7 @@ $app-title-size: 38px;
   padding-top: 16px;
   box-sizing: border-box;
   overflow: visible;
-  color: text-white;
+  color: $text-primary !important;
   /* IMPORTANT: keine feste width hier erzwingen, sonst kollidiert es mit :width */
 }
 
@@ -300,6 +301,7 @@ $app-title-size: 38px;
   .top-bar {
     background-color: #1f2a1f !important;
     border-bottom-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff !important;
   }
 
   .app-title {
@@ -309,6 +311,7 @@ $app-title-size: 38px;
   .left-drawer {
     background-color: #253025 !important;
     border-right-color: rgba(255, 255, 255, 0.12);
+    color: #ffffff !important;
   }
 
   .drawer-item,

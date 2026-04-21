@@ -34,6 +34,8 @@ export default createVuetify({
           secondary: colors.green.lighten2,
           background: '#121812',
           surface: '#1d251d',
+          'on-background': '#ffffff',
+          'on-surface': '#ffffff',
         },
       }
     },

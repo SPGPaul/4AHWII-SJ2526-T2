@@ -5,9 +5,9 @@
       <v-container class="my-5">
         <v-row>
           <v-col>
-            <v-card elevation="12" width="350" class="align-center justify-center bg-white" color="#bcefc2"
+            <v-card elevation="12" width="350" class="align-center justify-center bg-white login-card" color="#bcefc2"
               min-height="250" rounded>
-              <v-card-title class="d-flex align-center justify-center">
+              <v-card-title class="d-flex align-center justify-center login-title">
                 <span class="pr-20">Rechnungsradar</span>
 
                 <v-img src="@/assets/RechnungsradarLogo.png" max-width="50" contain class="ml-3"></v-img>
@@ -17,7 +17,7 @@
 
 
               <v-card-item class="align-center justify-center">
-                <v-text-field class="text-black mb-1 my-2" variant="outlined" v-model="state.email"
+                <v-text-field class="login-field mb-1 my-2" variant="outlined" v-model="state.email"
                   :error-messages="v$.email.$errors.map((e) => e.$message)" label="E-Mail" required
                   @blur="v$.email.$touch" @input="v$.email.$touch" pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$"
                   width="250"></v-text-field>
@@ -25,18 +25,18 @@
               <v-card-item class="align-center justify-center my-0">
                 <v-text-field label="Password" v-model="state.password"
                   :error-messages="v$.password.$errors.map((e) => e.$message)" :type="show1 ? 'text' : 'password'"
-                  variant="outlined" class="mb-1 text-black my-2" required @blur="v$.password.$touch"
+                  variant="outlined" class="login-field mb-1 my-2" required @blur="v$.password.$touch"
                   @input="v$.password.$touch" width="250" :append-inner-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
                   @click:append-inner="show1 = !show1" />
 
               </v-card-item>
               <v-card-item class="align-center justify-center" rounded flat>
-                <v-btn type="submit" class="justify-center login mb-1" rounded block outlined width="250"
+                <v-btn type="submit" class="justify-center login-btn mb-1" rounded block outlined width="250"
                   color="#f2fbf6">Login </v-btn>
               </v-card-item>
               <v-card-item class="align-center justify-center " rounded flat>
 
-                <v-btn class="justify-center mb-1" color="white" to="Register" flat @click="Test()"> Don't have an
+                <v-btn class="justify-center mb-1 login-link" color="white" to="Register" flat @click="Test()"> Don't have an
                   Account? Register</v-btn>
               </v-card-item>
             </v-card>
@@ -216,6 +216,29 @@ const show2 = ref(true)
 
 .v-text-field {
   width: 100%;
+}
+
+.login-card,
+.login-card * {
+  color: #000000 !important;
+}
+
+.login-card .v-field,
+.login-card .v-field__input,
+.login-card .v-field-label,
+.login-card .v-label,
+.login-card .v-messages,
+.login-card .v-btn,
+.login-card .v-btn__content {
+  color: #000000 !important;
+}
+
+.login-card .login-btn {
+  color: #000000 !important;
+}
+
+.login-card .login-link {
+  color: #000000 !important;
 }
 
 .v-text-field .v-field {

@@ -234,7 +234,7 @@ async function renderBarChart() {
         return `${dateLabel}<br/>Wert: ${p.value} €`;
       },
     },
-    grid: { left: "5%", right: "5%", bottom: "5%", containLabel: true },
+    grid: { left: "5%", right: "5%", bottom: "5%" },
     xAxis: { type: "category", data: displayedTime, axisLabel: { rotate: 25 } },
     yAxis: { type: "value" },
     series,
@@ -425,7 +425,7 @@ onMounted(async () => {
           splitLine: { show: false },
           axisLabel: { fontSize: 11 },
         },
-        grid: { left: 10, right: 10, top: 36, bottom: 10, containLabel: true },
+        grid: { left: 10, right: 10, top: 36, bottom: 10 },
         series: [
           {
             data: cat.values,

@@ -42,14 +42,33 @@
       <v-row>
         <v-col
           v-for="item in filteredRechnung"
-          :key="item.img + item.transaktion"
+          :key="item.documentId || item.img + item.transaktion + item.date"
           cols="12"
           sm="6"
           md="4"
           lg="3"
         >
           <v-card class="bill-card" elevation="2" @click="openReceipt(item)" role="button" tabindex="0">
-            <v-img :src="item.img" height="160" class="bill-card-img" contain />
+            <div class="bill-card-media">
+              <v-img
+                :src="item.img || placeholderImage"
+                height="180"
+                class="bill-card-img"
+                cover
+              >
+                <template #placeholder>
+                  <div class="bill-card-placeholder">
+                    <v-icon size="44">mdi-receipt-text-outline</v-icon>
+                    <span>Beleg wird geladen</span>
+                  </div>
+                </template>
+                <div class="bill-card-overlay">
+                  <v-chip size="small" color="white" variant="elevated" class="bill-card-chip">
+                    {{ item.categoryLabel || "Sonstiges" }}
+                  </v-chip>
+                </div>
+              </v-img>
+            </div>
             <v-card-text class="bill-card-body">
               <div class="trans-title">{{ item.transaktion }}</div>
               <div class="trans-meta">{{ item.categoryLabel || "Sonstiges" }}</div>
@@ -75,7 +94,21 @@
         <v-btn icon @click="dialog = false"><v-icon>mdi-close</v-icon></v-btn>
       </v-toolbar>
       <v-card-text class="dialog-body">
-        <v-img v-if="selected" :src="selected.img" max-height="80vh" contain />
+        <div v-if="selected" class="dialog-image-shell">
+          <v-img
+            :src="selected.img || placeholderImage"
+            class="dialog-image"
+            height="72vh"
+            contain
+          >
+            <template #placeholder>
+              <div class="bill-card-placeholder dialog-placeholder">
+                <v-icon size="56">mdi-receipt-text-outline</v-icon>
+                <span>Beleg wird geladen</span>
+              </div>
+            </template>
+          </v-img>
+        </div>
         <div v-else class="no-data">Kein Beleg ausgewählt.</div>
       </v-card-text>
     </v-card>
@@ -89,6 +122,31 @@ export default {
   name: "BillOverviewArea",
   data() {
     return {
+      placeholderImage:
+        "data:image/svg+xml;charset=UTF-8," +
+        encodeURIComponent(`
+          <svg xmlns="http://www.w3.org/2000/svg" width="800" height="520" viewBox="0 0 800 520">
+            <defs>
+              <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+                <stop offset="0%" stop-color="#f1fff4"/>
+                <stop offset="100%" stop-color="#d8f3df"/>
+              </linearGradient>
+            </defs>
+            <rect width="800" height="520" rx="36" fill="url(#g)"/>
+            <circle cx="650" cy="110" r="70" fill="#bcefc2" opacity="0.65"/>
+            <circle cx="130" cy="400" r="95" fill="#ffffff" opacity="0.45"/>
+            <g transform="translate(250 96)">
+              <rect x="0" y="0" width="300" height="328" rx="24" fill="#ffffff" stroke="#8ec99b" stroke-width="8"/>
+              <rect x="38" y="44" width="224" height="24" rx="12" fill="#bcefc2"/>
+              <rect x="38" y="90" width="184" height="16" rx="8" fill="#d6eedd"/>
+              <rect x="38" y="126" width="224" height="16" rx="8" fill="#d6eedd"/>
+              <rect x="38" y="170" width="224" height="18" rx="9" fill="#e7f4ea"/>
+              <rect x="38" y="206" width="184" height="18" rx="9" fill="#e7f4ea"/>
+              <rect x="38" y="248" width="124" height="28" rx="14" fill="#67a96f"/>
+            </g>
+            <text x="400" y="468" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" fill="#3f6f48">Gescannte Belege</text>
+          </svg>
+        `),
       searchQuery: "",
       selectedCategory: null,
       sortBy: "date-newest",
@@ -209,7 +267,7 @@ export default {
             }
           }
           return {
-            img: imgSrc,
+            img: imgSrc || this.placeholderImage,
             transaktion: item.transaktion || item.title || '',
             categoryLabel: item.categoryLabel || item.category_name || item.category || 'Sonstiges',
             documentId: item.documentId || null,
@@ -282,9 +340,59 @@ export default {
   box-shadow: 0 6px 20px rgba(11, 43, 24, 0.12);
 }
 .bill-card { cursor: pointer; }
+.bill-card-media {
+  position: relative;
+  overflow: hidden;
+}
 .bill-card-img {
   background: #f5fff8; /* soft greenish background to match theme */
   object-fit: cover;
+}
+.bill-card-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 12px;
+  display: flex;
+  justify-content: flex-start;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(11, 43, 24, 0.55));
+}
+.bill-card-chip {
+  font-weight: 600;
+}
+.bill-card-placeholder {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: rgba(var(--v-theme-on-surface), 0.65);
+  background: linear-gradient(135deg, #f5fff8 0%, #e4f4e8 100%);
+}
+.bill-card-placeholder .v-icon {
+  color: rgba(67, 124, 76, 0.88);
+}
+.dialog-body {
+  padding: 16px;
+  background: linear-gradient(180deg, #f7fff8 0%, #eef8f0 100%);
+}
+.dialog-image-shell {
+  min-height: 72vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f5fff8 0%, #e2f1e6 100%);
+  border: 1px solid rgba(67, 124, 76, 0.12);
+}
+.dialog-image {
+  width: 100%;
+}
+.dialog-placeholder {
+  height: 72vh;
 }
 .bill-card-body {
   padding: 14px;

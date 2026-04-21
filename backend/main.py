@@ -74,20 +74,20 @@ app = FastAPI()
 async def parse_receipt(file: UploadFile = File(...)):
     # 1. Bild laden
     image = Image.open(file.file).convert('RGB')
-    
-    #Bild vorverarbeiten
+    print("[RECEIPT] Received file:", file.filename)
+    # Bild vorverarbeiten
     image = enhance_receipt(image)
 
     # 2. Donut "task prompt" (sagt: "parse receipt")
-    task_prompt = "<s_cord-v2>"  
+    task_prompt = "<s_cord-v2>"
     decoder_input_ids = processor.tokenizer(task_prompt, return_tensors="pt").input_ids
-    
+
     # 3. Bild verarbeiten
     pixel_values = processor(image, return_tensors="pt").pixel_values
-    
+
     # 4. Modell generiert JSON-String
     outputs = model.generate(
-        pixel_values, 
+        pixel_values,
         decoder_input_ids=decoder_input_ids,
         max_length=2048,      # ← Mehr Platz!
         num_beams=5,          # ← Beam Search
@@ -96,7 +96,6 @@ async def parse_receipt(file: UploadFile = File(...)):
         pad_token_id=processor.tokenizer.pad_token_id
     )
 
-    
     # 5. JSON extrahieren
     sequence = processor.batch_decode(outputs, skip_special_tokens=True)[0]
     sequence = re.sub(r"<.*?>", "", sequence, count=1).strip()
@@ -104,5 +103,12 @@ async def parse_receipt(file: UploadFile = File(...)):
     print("🔍 RAW JSON:", json_result)  # ← DEBUG 1
     processed = clean_receipt_data(json_result)
     print("🔍 CLEANED:", processed)    # ← DEBUG 2
+    # Log all received receipts (items)
+    if processed and processed.get("items"):
+        print("[RECEIPT] Items received:")
+        for item in processed["items"]:
+            print(item)
+    else:
+        print("[RECEIPT] No items found in receipt.")
 
     return {"data": processed}

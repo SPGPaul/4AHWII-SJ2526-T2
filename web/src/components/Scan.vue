@@ -330,6 +330,7 @@ import {
 } from "@/utils/receipt-category";
 import { preprocessCanvas, ocrSorted } from "@/utils/ocr-helpers";
 import { STRAPI_URL } from "@/utils/strapi";
+import { nextTick } from "vue";
 
 export default {
   data() {
@@ -551,16 +552,64 @@ export default {
         return;
       }
 
+      if (
+        !window.isSecureContext &&
+        !["localhost", "127.0.0.1"].includes(window.location.hostname)
+      ) {
+        this.notify("Kamera funktioniert nur auf HTTPS oder localhost.");
+        return;
+      }
+
+      if (this.cameraStream) {
+        this.stopCamera();
+      }
+
+      let stream = null;
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
+          audio: false,
         });
+
+        await nextTick();
+
+        const video = this.$refs.cameraVideo;
+        if (!video) {
+          throw new Error("Kamera-Videoelement nicht verfügbar");
+        }
+
+        video.srcObject = stream;
+
+        await new Promise((resolve, reject) => {
+          const handleLoadedMetadata = () => {
+            video.removeEventListener("loadedmetadata", handleLoadedMetadata);
+            video.removeEventListener("error", handleVideoError);
+            resolve();
+          };
+
+          const handleVideoError = (event) => {
+            video.removeEventListener("loadedmetadata", handleLoadedMetadata);
+            video.removeEventListener("error", handleVideoError);
+            reject(event?.error || new Error("Video konnte nicht gestartet werden"));
+          };
+
+          video.addEventListener("loadedmetadata", handleLoadedMetadata, { once: true });
+          video.addEventListener("error", handleVideoError, { once: true });
+        });
+
+        await video.play();
+
         this.cameraStream = stream;
         this.cameraRunning = true;
-        this.$refs.cameraVideo.srcObject = stream;
-        await this.$refs.cameraVideo.play();
       } catch (error) {
+        if (stream) {
+          for (const track of stream.getTracks()) {
+            track.stop();
+          }
+        }
         console.error("Kamera konnte nicht gestartet werden:", error);
+        this.cameraStream = null;
+        this.cameraRunning = false;
         this.notify("Kamera konnte nicht gestartet werden.");
       }
     },
@@ -573,6 +622,7 @@ export default {
       this.cameraStream = null;
       this.cameraRunning = false;
       if (this.$refs.cameraVideo) {
+        this.$refs.cameraVideo.pause();
         this.$refs.cameraVideo.srcObject = null;
       }
     },
