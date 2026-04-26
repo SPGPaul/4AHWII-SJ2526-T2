@@ -58,7 +58,12 @@ export default defineConfig({
     proxy: {
       // Python AI backend — only the receipt-processing endpoint
       "/api/receipt": {
-        target: "http://localhost:8001",
+        target: "http://backend:8000",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ""),
+      },
+      "/api/llm": {
+        target: "http://backend:8000",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },

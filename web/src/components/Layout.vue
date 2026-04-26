@@ -101,6 +101,14 @@
             <v-list-item-title>Analysen</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
+        <v-list-item to="/savings-ai" class="drawer-item" @click="isMobile && (drawer = false)">
+          <v-list-item-icon class="drawer-item-icon">
+            <v-icon>mdi-piggy-bank-outline</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>AI Spartipps</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
         <v-spacer></v-spacer>
       </v-list>
     </v-navigation-drawer>
