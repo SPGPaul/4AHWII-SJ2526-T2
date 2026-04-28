@@ -10,7 +10,7 @@ services:
       context: ./web/
       dockerfile: Dockerfile
     ports:
-        - "3001:3000"
+      - "3001:3000"
     environment:
       - NODE_ENV=development
     # - NODE_ENV=production
@@ -77,22 +77,14 @@ services:
       - strapi-strapiDB
 
   ollama:
-    image: ollama/ollama:latest
+    build: .
+    image: ollama-custom:latest
+    container_name: ollama
     restart: unless-stopped
     ports:
       - "11434:11434"
     volumes:
       - ollama-data:/root/.ollama
-
-  ollama-pull:
-    image: ollama/ollama:latest
-    depends_on:
-      - ollama
-    environment:
-      - OLLAMA_HOST=http://ollama:11434
-    entrypoint: ["/bin/sh", "-c"]
-    command: "ollama pull qwen3:0.6b"
-    restart: "no"
 
 volumes:
   node_modules:
