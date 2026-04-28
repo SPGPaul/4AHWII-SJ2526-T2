@@ -6,14 +6,14 @@
       <v-card class="profile-header" elevation="4">
         
         <div class="header-left">
- <v-btn icon variant="text" class="back-btn bg-white text-black" to="dashboard">
+ <v-btn icon variant="text" class="back-btn" to="dashboard">
       <v-icon>mdi-arrow-left</v-icon>
     </v-btn>
           <v-avatar size="60" class="avatar">
             <span>{{ userInitials }}</span>
           </v-avatar>
             
-          <div class="text-black">
+          <div class="account-copy">
             <h2>Mein Account</h2>
             <p>{{ userEmail }}</p>
             <small>{{ userName }}</small>
@@ -22,7 +22,7 @@
 
         <div class="header-right">
           <v-btn variant="text">Zurück zum Dashboard</v-btn>
-          <v-btn class="text-black bg-white  user-info" rounded to="/">Logout
+          <v-btn class="user-info" rounded to="/">Logout
               <v-icon end>mdi-logout</v-icon></v-btn>
         </div>
       </v-card>
@@ -42,7 +42,7 @@
                 <v-text-field label="Nachname" block rounded variant="outlined" class="text-black" />
               </v-col>
               <v-col cols="6">
-                <v-text-field v-model="state.name" label="Benutzername" block rounded variant="outlined" class="text-black" clearable model-value=' '> {{ userName }}</v-text-field>
+                <v-text-field v-model="state.name" label="Benutzername" block rounded variant="outlined" class="text-black"  model-value=' '> {{ userName }}</v-text-field>
               </v-col>
               <v-col cols="6">
                 
@@ -199,9 +199,9 @@ $app-title-size: 38px;
 
   background: linear-gradient(
     135deg,
-    #f6fbf9 0%,
-    #e8f6f1 50%,
-    #d8eee6 100%
+    var(--app-page-bg) 0%,
+    var(--app-surface-strong) 50%,
+    var(--app-surface-soft) 100%
   );
 }
 
@@ -213,8 +213,9 @@ $app-title-size: 38px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: white;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  background: var(--app-surface);
+  color: var(--app-text);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 
   .header-left {
     display: flex;
@@ -228,11 +229,11 @@ $app-title-size: 38px;
 
     p {
       margin: 0;
-      color: #666;
+      color: var(--app-muted);
     }
 
     small {
-      color: #999;
+      color: var(--app-muted);
     }
   }
 
@@ -254,7 +255,8 @@ $app-title-size: 38px;
 .content-card {
   padding: 30px;
   border-radius: 18px;
-  background: white;
+  background: var(--app-surface);
+  color: var(--app-text);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.04);
 
   h3 {
@@ -272,8 +274,8 @@ $app-title-size: 38px;
 /* Danger Card */
 
 .danger-card {
-  border: 1px solid #ffe5e5;
-  background: #fffdfd;
+  border: 1px solid rgba(198, 40, 40, 0.22);
+  background: var(--app-surface);
 
   h3 {
     color: #c62828;
@@ -295,7 +297,7 @@ $app-title-size: 38px;
 
 .back-btn {
   margin-bottom: 8px;
-  color: #333;
+  color: var(--app-text);
 }
 
 .avatar {
@@ -312,7 +314,11 @@ $app-title-size: 38px;
   }
 
   small {
-    color: #777;
+    color: var(--app-muted);
   }
+}
+
+.account-copy {
+  color: var(--app-text);
 }
 </style>  
