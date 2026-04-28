@@ -139,7 +139,7 @@ async function getBarChartData() {
   // Aggregate by category
   const agg: Record<string, number> = {};
   for (const it of filtered) {
-    const cat = it.category ?? "Unbekannt";
+    const cat = it.categoryLabel ?? it.category_name ?? it.category ?? "Unbekannt";
     const raw = it.amount ?? it.total ?? 0;
     const val =
       typeof raw === "number"
