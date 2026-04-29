@@ -1,6 +1,8 @@
+import { STRAPI_URL } from "./strapi";
+
 export async function login({ identifier, password }) {
   const res = await fetch(
-    "https://elegant-eggs-b247740f2b.strapiapp.com/api/auth/local",
+    `${STRAPI_URL}/api/auth/local`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

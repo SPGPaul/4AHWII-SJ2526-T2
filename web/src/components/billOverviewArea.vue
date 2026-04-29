@@ -2,31 +2,80 @@
   <div class="bill-overview">
     <div class="header-row">
       <h1>Rechnungsübersicht</h1>
-      <v-text-field
-        v-model="searchQuery"
-        label="Suche"
-        clearable
-        hide-details
-        append-inner-icon="mdi-magnify"
-        class="search-field"
-      />
+      
     </div>
 
     <v-container fluid class="cards-wrap">
+      <v-row class="mb-2">
+        <v-col cols="12" md="6">
+          <v-text-field
+            v-model="searchQuery"
+            label="Suche"
+            clearable
+            hide-details
+            append-inner-icon="mdi-magnify"
+            class="search-field"
+          />
+        </v-col>
+        <v-col cols="12" sm="6" md="3">
+          <v-select
+            v-model="selectedCategory"
+            :items="categoryOptions"
+            label="Kategorie filtern"
+            hide-details
+            clearable
+            variant="outlined"
+            density="comfortable"
+          />
+        </v-col>
+        <v-col cols="12" sm="6" md="3">
+          <v-select
+            v-model="sortBy"
+            :items="sortOptions"
+            label="Sortieren"
+            hide-details
+            variant="outlined"
+            density="comfortable"
+          />
+        </v-col>
+      </v-row>
       <v-row>
         <v-col
           v-for="item in filteredRechnung"
-          :key="item.img + item.transaktion"
+          :key="item.documentId || item.img + item.transaktion + item.date"
           cols="12"
           sm="6"
           md="4"
           lg="3"
         >
           <v-card class="bill-card" elevation="2" @click="openReceipt(item)" role="button" tabindex="0">
-            <v-img :src="item.img" height="160" class="bill-card-img" contain />
+            <div class="bill-card-media">
+              <v-img
+                :src="item.img || placeholderImage"
+                height="180"
+                class="bill-card-img"
+                cover
+              >
+                <template #placeholder>
+                  <div class="bill-card-placeholder">
+                    <v-icon size="44">mdi-receipt-text-outline</v-icon>
+                    <span>Beleg wird geladen</span>
+                  </div>
+                </template>
+                <div class="bill-card-overlay">
+                  <v-chip size="small" color="white" variant="elevated" class="bill-card-chip">
+                    {{ item.categoryLabel || "Sonstiges" }}
+                  </v-chip>
+                </div>
+              </v-img>
+            </div>
             <v-card-text class="bill-card-body">
               <div class="trans-title">{{ item.transaktion }}</div>
-              <div class="trans-meta">Beleg</div>
+              <div class="trans-meta">{{ item.categoryLabel || "Sonstiges" }}</div>
+              <div class="trans-meta">
+                {{ formatDate(item.date) }}
+                <span v-if="item.amount !== null">· {{ formatAmount(item.amount) }}</span>
+              </div>
             </v-card-text>
           </v-card>
         </v-col>
@@ -45,7 +94,21 @@
         <v-btn icon @click="dialog = false"><v-icon>mdi-close</v-icon></v-btn>
       </v-toolbar>
       <v-card-text class="dialog-body">
-        <v-img v-if="selected" :src="selected.img" max-height="80vh" contain />
+        <div v-if="selected" class="dialog-image-shell">
+          <v-img
+            :src="selected.img || placeholderImage"
+            class="dialog-image"
+            height="72vh"
+            contain
+          >
+            <template #placeholder>
+              <div class="bill-card-placeholder dialog-placeholder">
+                <v-icon size="56">mdi-receipt-text-outline</v-icon>
+                <span>Beleg wird geladen</span>
+              </div>
+            </template>
+          </v-img>
+        </div>
         <div v-else class="no-data">Kein Beleg ausgewählt.</div>
       </v-card-text>
     </v-card>
@@ -54,43 +117,181 @@
 </template>
 
 <script>
+import { STRAPI_URL } from "@/utils/strapi";
 export default {
   name: "BillOverviewArea",
   data() {
     return {
+      placeholderImage:
+        "data:image/svg+xml;charset=UTF-8," +
+        encodeURIComponent(`
+          <svg xmlns="http://www.w3.org/2000/svg" width="800" height="520" viewBox="0 0 800 520">
+            <defs>
+              <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+                <stop offset="0%" stop-color="#f1fff4"/>
+                <stop offset="100%" stop-color="#d8f3df"/>
+              </linearGradient>
+            </defs>
+            <rect width="800" height="520" rx="36" fill="url(#g)"/>
+            <circle cx="650" cy="110" r="70" fill="#bcefc2" opacity="0.65"/>
+            <circle cx="130" cy="400" r="95" fill="#ffffff" opacity="0.45"/>
+            <g transform="translate(250 96)">
+              <rect x="0" y="0" width="300" height="328" rx="24" fill="#ffffff" stroke="#8ec99b" stroke-width="8"/>
+              <rect x="38" y="44" width="224" height="24" rx="12" fill="#bcefc2"/>
+              <rect x="38" y="90" width="184" height="16" rx="8" fill="#d6eedd"/>
+              <rect x="38" y="126" width="224" height="16" rx="8" fill="#d6eedd"/>
+              <rect x="38" y="170" width="224" height="18" rx="9" fill="#e7f4ea"/>
+              <rect x="38" y="206" width="184" height="18" rx="9" fill="#e7f4ea"/>
+              <rect x="38" y="248" width="124" height="28" rx="14" fill="#67a96f"/>
+            </g>
+            <text x="400" y="468" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" fill="#3f6f48">Gescannte Belege</text>
+          </svg>
+        `),
       searchQuery: "",
+      selectedCategory: null,
+      sortBy: "date-newest",
       dialog: false,
       selected: null,
-      desserts: [
-        {
-          img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp",
-          transaktion: "AMZ - GGL",
-        },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 237 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 262 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 305 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 356 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 375 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 392 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 408 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 452 },
-        { img: "https://cdn.prod.website-files.com/65c9eb8b18a74904c71e4d8e/66a8889946d967cf63c780fa_6634971f1028e9a64325b236_rechnungsvorlage-kostenlos-word-pdf-excel.webp", transaktion: 518 },
+      bills: [],
+      loading: false,
+      error: null,
+      sortOptions: [
+        { title: "Neueste zuerst", value: "date-newest" },
+        { title: "Älteste zuerst", value: "date-oldest" },
+        { title: "Betrag absteigend", value: "amount-desc" },
+        { title: "Betrag aufsteigend", value: "amount-asc" },
+        { title: "Name A-Z", value: "name-asc" },
+        { title: "Name Z-A", value: "name-desc" },
       ],
     };
   },
   computed: {
+    categoryOptions() {
+      const categories = this.bills
+        .map((item) => item.categoryLabel || "Sonstiges")
+        .filter(Boolean);
+      return [...new Set(categories)].sort((a, b) => String(a).localeCompare(String(b), "de"));
+    },
     filteredRechnung() {
-      if (!this.searchQuery) return this.desserts;
-      return this.desserts.filter((item) =>
-        item.transaktion.toString().toLowerCase().includes(this.searchQuery.toLowerCase())
-      );
+      const query = this.searchQuery.trim().toLowerCase();
+
+      let items = [...this.bills];
+      if (this.selectedCategory) {
+        items = items.filter((item) => (item.categoryLabel || "Sonstiges") === this.selectedCategory);
+      }
+
+      if (query) {
+        items = items.filter((item) => {
+          const fields = [
+            item.transaktion,
+            item.categoryLabel,
+            item.documentId,
+            item.date ? this.formatDate(item.date) : "",
+            item.amount !== null ? this.formatAmount(item.amount) : "",
+          ];
+          return fields.some((field) => String(field || "").toLowerCase().includes(query));
+        });
+      }
+
+      const sorted = [...items].sort((a, b) => {
+        switch (this.sortBy) {
+          case "date-oldest":
+            return this.toTimestamp(a.date) - this.toTimestamp(b.date);
+          case "date-newest":
+            return this.toTimestamp(b.date) - this.toTimestamp(a.date);
+          case "amount-asc":
+            if (a.amount === null && b.amount === null) return 0;
+            if (a.amount === null) return 1;
+            if (b.amount === null) return -1;
+            return a.amount - b.amount;
+          case "amount-desc":
+            if (a.amount === null && b.amount === null) return 0;
+            if (a.amount === null) return 1;
+            if (b.amount === null) return -1;
+            return b.amount - a.amount;
+          case "name-desc":
+            return String(b.transaktion || "").localeCompare(String(a.transaktion || ""), "de");
+          case "name-asc":
+          default:
+            return String(a.transaktion || "").localeCompare(String(b.transaktion || ""), "de");
+        }
+      });
+
+      return sorted;
     },
   },
   methods: {
+    toTimestamp(value) {
+      const parsed = new Date(value || 0).getTime();
+      return Number.isFinite(parsed) ? parsed : 0;
+    },
+    formatDate(value) {
+      if (!value) return "Kein Datum";
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.getTime())) return "Kein Datum";
+      return parsed.toLocaleDateString("de-AT");
+    },
+    formatAmount(value) {
+      const amount = Number(value);
+      if (!Number.isFinite(amount)) return "—";
+      return new Intl.NumberFormat("de-AT", {
+        style: "currency",
+        currency: "EUR",
+      }).format(amount);
+    },
+    async fetchBills() {
+      this.loading = true;
+      this.error = null;
+      try {
+        // Nutze loadUserData wie in Analysis_area.vue
+        const { loadUserData } = await import('@/utils/loadUser');
+        const data = await loadUserData();
+        let items = Array.isArray(data?.receipts) ? data.receipts : [];
+        // Doppelte filtern
+        const seen = new Set();
+        items = items.filter(item => {
+          if (!item.documentId) return true;
+          if (seen.has(item.documentId)) return false;
+          seen.add(item.documentId);
+          return true;
+        });
+        // Mapping für img
+        const baseUrl = STRAPI_URL;
+        this.bills = items.map(item => {
+          let imgSrc = '';
+          if (item.img) {
+            if (typeof item.img === 'string') {
+              imgSrc = item.img.startsWith('http') ? item.img : `${baseUrl}${item.img}`;
+            } else if (typeof item.img === 'object' && item.img.url) {
+              imgSrc = item.img.url.startsWith('http') ? item.img.url : `${baseUrl}${item.img.url}`;
+            }
+          }
+          return {
+            img: imgSrc || this.placeholderImage,
+            transaktion: item.transaktion || item.title || '',
+            categoryLabel: item.categoryLabel || item.category_name || item.category || 'Sonstiges',
+            documentId: item.documentId || null,
+            date: item.date || item.createdAt || null,
+            amount: this.toNumber(item.summe ?? item.amount ?? item.total),
+          };
+        });
+      } catch (e) {
+        this.error = e.message || "Fehler beim Laden der Rechnungen.";
+      } finally {
+        this.loading = false;
+      }
+    },
     openReceipt(item) {
       this.selected = item;
       this.dialog = true;
     },
+    toNumber(value) {
+      const parsed = Number(String(value ?? "").replace(",", "."));
+      return Number.isFinite(parsed) ? parsed : null;
+    },
+  },
+  mounted() {
+    this.fetchBills();
   },
 };
 </script>
@@ -101,7 +302,8 @@ export default {
   margin: 0 auto;
   padding: 24px;
   box-sizing: border-box;
-  background: #ffffff;
+  background: rgb(var(--v-theme-surface));
+  color: rgb(var(--v-theme-on-surface));
 }
 .header-row {
   display: flex;
@@ -114,13 +316,12 @@ export default {
 }
 .header-row h1 {
   margin: 0;
-  color: #0b2b18;
+  color: rgb(var(--v-theme-on-surface));
   font-size: 2rem;
   font-weight: 700;
 }
 .search-field {
-  width: 360px;
-  max-width: 45%;
+  width: 100%;
 }
 .cards-wrap {
   padding: 8px 2px;
@@ -139,9 +340,59 @@ export default {
   box-shadow: 0 6px 20px rgba(11, 43, 24, 0.12);
 }
 .bill-card { cursor: pointer; }
+.bill-card-media {
+  position: relative;
+  overflow: hidden;
+}
 .bill-card-img {
   background: #f5fff8; /* soft greenish background to match theme */
   object-fit: cover;
+}
+.bill-card-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 12px;
+  display: flex;
+  justify-content: flex-start;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(11, 43, 24, 0.55));
+}
+.bill-card-chip {
+  font-weight: 600;
+}
+.bill-card-placeholder {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: rgba(var(--v-theme-on-surface), 0.65);
+  background: linear-gradient(135deg, #f5fff8 0%, #e4f4e8 100%);
+}
+.bill-card-placeholder .v-icon {
+  color: rgba(67, 124, 76, 0.88);
+}
+.dialog-body {
+  padding: 16px;
+  background: linear-gradient(180deg, #f7fff8 0%, #eef8f0 100%);
+}
+.dialog-image-shell {
+  min-height: 72vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f5fff8 0%, #e2f1e6 100%);
+  border: 1px solid rgba(67, 124, 76, 0.12);
+}
+.dialog-image {
+  width: 100%;
+}
+.dialog-placeholder {
+  height: 72vh;
 }
 .bill-card-body {
   padding: 14px;
@@ -152,24 +403,24 @@ export default {
 }
 .trans-title {
   font-weight: 700;
-  color: #f1f1f1;
+  color: rgb(var(--v-theme-on-surface));
   font-size: 1rem;
 }
 .trans-meta {
   font-size: 0.85rem;
-  color: #ffffff;
+  color: rgba(var(--v-theme-on-surface), 0.72);
   margin-top: 6px;
 }
 .no-data {
   padding: 28px;
   text-align: center;
-  color: #fafafa;
+  color: rgba(var(--v-theme-on-surface), 0.8);
 }
 
 @media (max-width: 900px) {
   .search-field {
-    max-width: 50%;
-    width: 240px;
+    max-width: 100%;
+    width: 100%;
   }
 }
 
@@ -188,4 +439,3 @@ export default {
 }
 
 </style>
-

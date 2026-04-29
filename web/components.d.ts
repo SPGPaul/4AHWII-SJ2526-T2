@@ -18,6 +18,6 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Scan: typeof import('./src/components/Scan.vue')['default']
-    Test: typeof import('./src/components/Test.vue')['default']
+    Upload_area: typeof import('./src/components/upload_area.vue')['default']
   }
 }

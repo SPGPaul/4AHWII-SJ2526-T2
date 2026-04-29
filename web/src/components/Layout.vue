@@ -1,6 +1,6 @@
 <template>
   <v-app
-    :class="{ 'is-mobile': isMobile }"
+    :class="{ 'is-mobile': isMobile, 'theme-dark': isDark }"
     :style="{ '--drawer-width': drawerWidth + 'px' }"
   >
     <!-- top bar -->
@@ -14,6 +14,15 @@
         Rechnungsradar
       </v-toolbar-title>
 
+      <v-btn
+        icon
+        variant="text"
+        :title="isDark ? 'Hellmodus aktivieren' : 'Dunkelmodus aktivieren'"
+        @click="toggleTheme"
+        style="position: absolute; right: 72px; top: 50%; transform: translateY(-50%); z-index: 10;"
+      >
+        <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
+      </v-btn>
 
        <!-- Avatar menu ersetzt den runden Button -->
   <v-menu min-width="240" offset-y>
@@ -25,7 +34,7 @@
         icon
         :title="'Profil'"
       >
-        <v-avatar color="black" size="40">
+        <v-avatar color="green" size="40">
           <span class="text-white profile">{{ userInitials }}</span>
         </v-avatar>
       </v-btn>
@@ -34,13 +43,13 @@
     <v-card>
       <v-card-text>
         <div class="mx-auto text-center" style="width:220px">
-          <v-avatar color="black" size="56" class="mb-2">
+          <v-avatar color="green" size="56" class="mb-2">
             <span class="text-h6 text-white">{{ userInitials }}</span>
           </v-avatar>
           <h3 style="margin:4px 0;">{{ userName }}</h3>
           <p class="text-caption mt-1">{{ userEmail }}</p>
           <v-divider class="my-3"></v-divider>
-          <v-btn to="/profil" variant="text" rounded block>Account bearbeiten</v-btn>
+          <v-btn to="/profil" variant="text"  color="secondary" rounded block>Account bearbeiten</v-btn>
           <v-divider class="my-3"></v-divider>
           <v-btn variant="text" rounded block color="error" @click="logout">Abmelden</v-btn>
         </div>
@@ -92,6 +101,14 @@
             <v-list-item-title>Analysen</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
+        <v-list-item to="/savings-ai" class="drawer-item" @click="isMobile && (drawer = false)">
+          <v-list-item-icon class="drawer-item-icon">
+            <v-icon>mdi-piggy-bank-outline</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>AI Spartipps</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
         <v-spacer></v-spacer>
       </v-list>
     </v-navigation-drawer>
@@ -104,9 +121,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { useTheme } from "vuetify";
 import { loadUserData } from "@/utils/loadUser";
 
 const drawer = ref(true);
+const theme = useTheme();
+
+const isDark = computed(() => theme.global.current.value.dark);
 
 const isMobile = ref(false);
 const drawerWidth = computed(() => (isMobile.value ? 280 : 120));
@@ -127,6 +148,12 @@ function logout(){
   window.location.href = "/";
 }
 
+function toggleTheme() {
+  const nextTheme = theme.global.current.value.dark ? "light" : "dark";
+  theme.global.name.value = nextTheme;
+  localStorage.setItem("theme-preference", nextTheme);
+}
+
 const updateIsMobile = () => {
   isMobile.value = window.matchMedia("(max-width: 700px)").matches;
   if (isMobile.value) drawer.value = false;
@@ -144,11 +171,12 @@ onBeforeUnmount(() => {
 </script>
 
 <style lang="scss" scoped>
+  
 /* proportions and colors */
 $sidebar-bg: #a8e6b8;
 $topbar-bg: #bcefc2;
-$text-primary: #0b2b18;
-$border-dark: #222;
+$text-primary:	#28282B;
+$border-dark: #28282B;
 
 $topbar-height: 120px;
 $profile-size: 48px;
@@ -164,6 +192,7 @@ $app-title-size: 38px;
   padding-left: 12px;
   padding-right: 12px;
   overflow: visible;
+  color: $text-primary !important;
 }
 
 .app-title {
@@ -203,7 +232,7 @@ $app-title-size: 38px;
 .profile {
   font-size: 18px;
   line-height: 1;
-  color: black;
+  color: #ffffff !important;
 }
 
 .left-drawer {
@@ -212,6 +241,7 @@ $app-title-size: 38px;
   padding-top: 16px;
   box-sizing: border-box;
   overflow: visible;
+  color: $text-primary !important;
   /* IMPORTANT: keine feste width hier erzwingen, sonst kollidiert es mit :width */
 }
 
@@ -268,11 +298,35 @@ $app-title-size: 38px;
    Put your spacing into the inner wrap instead.
 */
 .main-area {
-  background: white;
+  background: rgb(var(--v-theme-background));
   box-sizing: border-box;
   /* remove the old calculated paddings */
   padding: unset;
   min-height: 100%;
+}
+
+.theme-dark {
+  .top-bar {
+    background-color: #1f2a1f !important;
+    border-bottom-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff !important;
+  }
+
+  .app-title {
+    color: #e9f3eb !important;
+  }
+
+  .left-drawer {
+    background-color: #253025 !important;
+    border-right-color: rgba(255, 255, 255, 0.12);
+    color: #ffffff !important;
+  }
+
+  .drawer-item,
+  .drawer-item .v-list-item-title,
+  .drawer-item .v-icon {
+    color: #e9f3eb !important;
+  }
 }
 
 /* add page padding inside the wrap (after drawer/appbar offset) */
