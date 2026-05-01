@@ -98,6 +98,7 @@ import { reactive } from "vue";
 import useVuelidate from "@vuelidate/core";
 import { email, required, minLength } from "@vuelidate/validators";
 import { login } from "@/utils/auth";
+import { STRAPI_URL } from "@/utils/strapi";
 import { useRouter } from "vue-router";
 //import { V } from "dist/assets/VContainer-RfKRV4UQ";
 
@@ -137,7 +138,7 @@ function clear() {
 
 async function register() {
   const res = await fetch(
-    "https://elegant-eggs-b247740f2b.strapiapp.com/api/auth/local/register",
+    `${STRAPI_URL}/api/auth/local/register`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

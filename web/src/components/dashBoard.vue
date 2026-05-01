@@ -9,8 +9,10 @@ import {
 } from "echarts/components";
 import { UniversalTransition } from "echarts/features";
 import * as echarts from "echarts/core";
-import { onMounted, ref, onBeforeUnmount } from "vue";
+import { onMounted, ref, onBeforeUnmount, watch } from "vue";
+import { useTheme } from "vuetify";
 import { loadUserData } from "@/utils/loadUser";
+import { STRAPI_URL } from "@/utils/strapi";
 
 async function parseChartData(): Promise<any[]> {
   const data = await loadUserData();
@@ -117,10 +119,109 @@ const changeRate = ref<string>("...");
 const changeColor = ref<string>("black");
 const receiptCount = ref<number>(0);
 const barChartDiv = ref(null);
+const theme = useTheme();
+const chartDataRef = ref<any[]>([]);
+const chartReady = ref(false);
 const currentMonth = new Date().toLocaleString("de-DE", {
   month: "long",
   year: "numeric",
 });
+
+function isDarkMode() {
+  return theme.global.current.value.dark;
+}
+
+function chartTextColor() {
+  return isDarkMode() ? "#ffffff" : "#222222";
+}
+
+function chartTooltipBackground() {
+  return isDarkMode() ? "rgba(22, 30, 22, 0.96)" : "#ffffff";
+}
+
+function chartTooltipBorder() {
+  return isDarkMode() ? "rgba(255, 255, 255, 0.14)" : "rgba(0, 0, 0, 0.08)";
+}
+
+function buildChartOption(chartData: any[]) {
+  return {
+    color: palette,
+    grid: {
+      left: "2%",
+      right: "2%",
+      top: 30,
+      bottom: 30,
+    },
+    xAxis: {
+      type: "value",
+      axisLabel: {
+        formatter: (val: number) => formatEuro(val),
+        color: chartTextColor(),
+      },
+      splitLine: { show: false },
+    },
+    yAxis: {
+      type: "category",
+      data: chartData.map((d) => d.category),
+      axisLabel: { color: chartTextColor(), fontWeight: "bold" },
+      axisTick: { show: false },
+      axisLine: { show: false },
+    },
+    series: [
+      {
+        type: "bar",
+        data: chartData.map((d, i) => ({
+          value: d.value,
+          itemStyle: { color: palette[i % palette.length] },
+        })),
+        barWidth: 30,
+        label: {
+          show: true,
+          position: "right",
+          formatter: (params: any) => formatEuro(params.value),
+          fontWeight: "bold",
+          color: chartTextColor(),
+        },
+      },
+    ],
+    tooltip: {
+      trigger: "axis",
+      axisPointer: { type: "shadow" },
+      formatter: (params: any) => {
+        const p = Array.isArray(params) ? params[0] : params;
+        return `${p.name}: ${formatEuro(p.value)}`;
+      },
+      backgroundColor: chartTooltipBackground(),
+      borderColor: chartTooltipBorder(),
+      textStyle: { color: chartTextColor() },
+    },
+    title: { text: "", left: "center", top: 0 },
+  };
+}
+
+function renderChart(chartData: any[]) {
+  if (!barChartDiv.value) return;
+
+  use([
+    CanvasRenderer,
+    BarChart,
+    TitleComponent,
+    TooltipComponent,
+    GridComponent,
+    UniversalTransition,
+  ]);
+
+  if (!barChart) {
+    barChart = echarts.init(barChartDiv.value);
+  }
+
+  chartDataRef.value = chartData;
+  barChart.setOption(buildChartOption(chartData), true);
+  chartReady.value = true;
+
+  (barChartDiv as any)._echartsInstance = barChart;
+  setTimeout(() => barChart?.resize?.(), 50);
+}
 
 function formatEuro(val: number) {
   return `${val.toLocaleString("de-DE", {
@@ -201,7 +302,7 @@ async function refreshStats() {
 
 async function downloadImage(assetId = 1): Promise<string | null> {
   try {
-    const base = "https://elegant-eggs-b247740f2b.strapiapp.com";
+    const base = STRAPI_URL;
     // first fetch metadata to get the file URL
     const metaRes = await fetch(`${base}/api/download/files/${assetId}`);
     if (!metaRes.ok)
@@ -252,77 +353,17 @@ onMounted(async () => {
   await refreshStats();
   // Bar chart
   const chartData = await getBarChartData();
-  if (barChartDiv.value) {
-    use([
-      CanvasRenderer,
-      BarChart,
-      TitleComponent,
-      TooltipComponent,
-      GridComponent,
-      UniversalTransition,
-    ]);
-    const chart = echarts.init(barChartDiv.value);
-    chart.setOption({
-      color: palette,
-      grid: {
-        left: "2%",
-        right: "2%",
-        top: 30,
-        bottom: 30,
-        containLabel: true,
-      },
-      xAxis: {
-        type: "value",
-        axisLabel: {
-          formatter: (val: number) => formatEuro(val),
-          color: "#222",
-        },
-        splitLine: { show: false },
-      },
-      yAxis: {
-        type: "category",
-        data: chartData.map((d) => d.category),
-        axisLabel: { color: "#222", fontWeight: "bold" },
-        axisTick: { show: false },
-        axisLine: { show: false },
-      },
-      series: [
-        {
-          type: "bar",
-          data: chartData.map((d, i) => ({
-            value: d.value,
-            itemStyle: { color: palette[i % palette.length] },
-          })),
-          barWidth: 30,
-          label: {
-            show: true,
-            position: "right",
-            formatter: (params: any) => formatEuro(params.value),
-            fontWeight: "bold",
-            color: "#222",
-          },
-        },
-      ],
-      tooltip: {
-        trigger: "axis",
-        axisPointer: { type: "shadow" },
-        formatter: (params: any) => {
-          const p = Array.isArray(params) ? params[0] : params;
-          return `${p.name}: ${formatEuro(p.value)}`;
-        },
-        backgroundColor: "#fff",
-        textStyle: { color: "#222" },
-      },
-      title: { text: "", left: "center", top: 0 },
-    });
-    // store instance and ensure it resizes when viewport or layout changes
-    (barChartDiv as any)._echartsInstance = chart;
-    // small async resize to ensure proper initial rendering
-    setTimeout(() => chart.resize(), 50);
-    // keep reference for cleanup
-    barChart = chart;
-  }
+  renderChart(chartData);
 });
+
+watch(
+  () => theme.global.current.value.dark,
+  () => {
+    if (chartReady.value) {
+      renderChart(chartDataRef.value);
+    }
+  },
+);
 
 let barChart: any = null;
 
@@ -409,7 +450,7 @@ onBeforeUnmount(() => {
 .dashboard-title {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #222;
+  color: rgb(var(--v-theme-on-surface));
   margin-bottom: 0.5em;
   text-align: left;
 }
@@ -426,7 +467,7 @@ onBeforeUnmount(() => {
 .dashboard-total {
   font-size: 1.5rem;
   font-weight: 500;
-  color: #222;
+  color: rgb(var(--v-theme-on-surface));
 }
 
 .dashboard-change {
@@ -470,13 +511,13 @@ onBeforeUnmount(() => {
 .dashboard-receipt-count {
   font-size: 4rem;
   font-weight: 700;
-  color: #222;
+  color: rgb(var(--v-theme-on-surface));
   line-height: 1;
 }
 
 .dashboard-receipt-label {
   font-size: 1.2rem;
-  color: #222;
+  color: rgba(var(--v-theme-on-surface), 0.82);
   text-align: center;
 }
 

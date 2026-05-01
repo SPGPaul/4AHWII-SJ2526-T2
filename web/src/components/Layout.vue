@@ -1,10 +1,10 @@
 <template>
   <v-app
-    :class="{ 'is-mobile': isMobile }"
+    :class="{ 'is-mobile': isMobile, 'theme-dark': isDark }"
     :style="{ '--drawer-width': drawerWidth + 'px' }"
   >
     <!-- top bar -->
-    <v-app-bar app class="top-bar text-black" flat>
+    <v-app-bar app class="top-bar" flat>
       <v-btn icon @click="drawer = !drawer" class="mx-2">
         <v-icon>mdi-menu</v-icon>
       </v-btn>
@@ -14,6 +14,15 @@
         Rechnungsradar
       </v-toolbar-title>
 
+      <v-btn
+        icon
+        variant="text"
+        :title="isDark ? 'Hellmodus aktivieren' : 'Dunkelmodus aktivieren'"
+        @click="toggleTheme"
+        style="position: absolute; right: 72px; top: 50%; transform: translateY(-50%); z-index: 10;"
+      >
+        <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
+      </v-btn>
 
        <!-- Avatar menu ersetzt den runden Button -->
   <v-menu min-width="240" offset-y>
@@ -31,7 +40,7 @@
       </v-btn>
     </template>
 
-    <v-card>
+    <v-card class="profile-menu-card">
       <v-card-text>
         <div class="mx-auto text-center" style="width:220px">
           <v-avatar color="green" size="56" class="mb-2">
@@ -92,6 +101,14 @@
             <v-list-item-title>Analysen</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
+        <v-list-item to="/savings-ai" class="drawer-item" @click="isMobile && (drawer = false)">
+          <v-list-item-icon class="drawer-item-icon">
+            <v-icon>mdi-piggy-bank-outline</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>AI Spartipps</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
         <v-spacer></v-spacer>
       </v-list>
     </v-navigation-drawer>
@@ -103,17 +120,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
+import { useTheme } from "vuetify";
 import { loadUserData } from "@/utils/loadUser";
 
+const THEME_STORAGE_KEY = "rechnungsradar-theme";
+
 const drawer = ref(true);
+const theme = useTheme();
+
+const isDark = computed(() => theme.global.current.value.dark);
 
 const isMobile = ref(false);
 const drawerWidth = computed(() => (isMobile.value ? 280 : 120));
 
+const theme = useTheme();
+const isDarkMode = computed(() => theme.global.name.value === "dark");
+
 const userName = ref("user");
 const userInitials = ref("u");
 const userEmail = ref("user@mail.com");
+
+function setTheme(name: "light" | "dark") {
+  theme.global.name.value = name;
+  localStorage.setItem(THEME_STORAGE_KEY, name);
+}
+
+function toggleTheme() {
+  setTheme(isDarkMode.value ? "light" : "dark");
+}
 
 async function loadUser() {
     const user = await loadUserData();
@@ -127,16 +162,36 @@ function logout(){
   window.location.href = "/";
 }
 
+function toggleTheme() {
+  const nextTheme = theme.global.current.value.dark ? "light" : "dark";
+  theme.global.name.value = nextTheme;
+  localStorage.setItem("theme-preference", nextTheme);
+}
+
 const updateIsMobile = () => {
   isMobile.value = window.matchMedia("(max-width: 700px)").matches;
   if (isMobile.value) drawer.value = false;
 };
 
 onMounted(() => {
+  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+  if (savedTheme === "light" || savedTheme === "dark") {
+    theme.global.name.value = savedTheme;
+  }
+
   updateIsMobile();
   window.addEventListener("resize", updateIsMobile);
   loadUser();
 });
+
+watch(
+  () => theme.global.name.value,
+  (value) => {
+    if (value === "light" || value === "dark") {
+      localStorage.setItem(THEME_STORAGE_KEY, value);
+    }
+  }
+);
 
 onBeforeUnmount(() => {
   window.removeEventListener("resize", updateIsMobile);
@@ -146,18 +201,31 @@ onBeforeUnmount(() => {
 <style lang="scss" scoped>
   
 /* proportions and colors */
-$sidebar-bg: #a8e6b8;
-$topbar-bg: #bcefc2;
-$text-primary:	#28282B;
-$border-dark: #28282B;
-
 $topbar-height: 120px;
 $profile-size: 48px;
 $app-title-size: 38px;
 
+:global(.v-theme--light) {
+  --layout-page-bg: var(--app-page-bg);
+  --layout-surface: var(--app-surface);
+  --layout-surface-strong: var(--app-surface-strong);
+  --layout-surface-soft: var(--app-surface-soft);
+  --layout-text: var(--app-text);
+  --layout-border: var(--app-border);
+}
+
+:global(.v-theme--dark) {
+  --layout-page-bg: var(--app-page-bg);
+  --layout-surface: var(--app-surface);
+  --layout-surface-strong: var(--app-surface-strong);
+  --layout-surface-soft: var(--app-surface-soft);
+  --layout-text: var(--app-text);
+  --layout-border: var(--app-border);
+}
+
 .top-bar {
-  background-color: $topbar-bg !important;
-  border-bottom: 5px solid $border-dark;
+  background-color: var(--layout-surface-strong) !important;
+  border-bottom: 5px solid var(--layout-border);
   height: $topbar-height;
   --v-toolbar-height: #{$topbar-height};
   align-items: center;
@@ -165,19 +233,28 @@ $app-title-size: 38px;
   padding-left: 12px;
   padding-right: 12px;
   overflow: visible;
+  color: $text-primary !important;
 }
 
 .app-title {
   margin: 0 auto;
   font-size: $app-title-size;
   font-weight: 700;
-  color: $text-primary !important;
+  color: var(--layout-text) !important;
   text-align: center;
   line-height: 1.2;
 
   :deep(*) {
-    color: $text-primary !important;
+    color: var(--layout-text) !important;
   }
+}
+
+.theme-toggle-btn {
+  position: absolute;
+  right: 72px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
 }
 
 .top-profile-btn {
@@ -190,7 +267,7 @@ $app-title-size: 38px;
 }
 
 .rounded-profile {
-  background: linear-gradient(#f5fff8, #e9fff0);
+  background: linear-gradient(var(--layout-surface), var(--layout-surface-strong));
   border-radius: 999px;
   width: $profile-size;
   height: $profile-size;
@@ -204,16 +281,16 @@ $app-title-size: 38px;
 .profile {
   font-size: 18px;
   line-height: 1;
-  color: #bcefc2;
+  color: var(--layout-surface);
 }
 
 .left-drawer {
-  background-color: $sidebar-bg !important;
-  border-right: 2px solid rgba(0,0,0,0.08);
+  background-color: var(--layout-surface) !important;
+  border-right: 2px solid var(--layout-border);
   padding-top: 16px;
   box-sizing: border-box;
   overflow: visible;
-  color: text-white;
+  color: var(--layout-text);
   /* IMPORTANT: keine feste width hier erzwingen, sonst kollidiert es mit :width */
 }
 
@@ -225,7 +302,7 @@ $app-title-size: 38px;
 
 /* Desktop: icon over text */
 .drawer-item {
-  color: $text-primary !important;
+  color: var(--layout-text) !important;
   min-height: 96px;
   padding: 8px 6px;
   display: flex;
@@ -252,14 +329,14 @@ $app-title-size: 38px;
   .v-list-item-title {
     font-size: 12px;
     line-height: 1.2;
-    color: $text-primary !important;
+    color: var(--layout-text) !important;
     margin-top: 6px;
     white-space: normal;
     word-break: keep-all;
   }
 
   .v-icon {
-    color: $text-primary !important;
+    color: var(--layout-text) !important;
     font-size: 28px;
     line-height: 1;
   }
@@ -270,11 +347,45 @@ $app-title-size: 38px;
    Put your spacing into the inner wrap instead.
 */
 .main-area {
-  background: white;
+  background: var(--layout-page-bg);
+  color: var(--layout-text);
   box-sizing: border-box;
   /* remove the old calculated paddings */
   padding: unset;
   min-height: 100%;
+}
+
+.theme-dark {
+  .top-bar {
+    background-color: #1f2a1f !important;
+    border-bottom-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff !important;
+  }
+
+  .app-title {
+    color: #e9f3eb !important;
+  }
+
+  .left-drawer {
+    background-color: #253025 !important;
+    border-right-color: rgba(255, 255, 255, 0.12);
+    color: #ffffff !important;
+  }
+
+  .drawer-item,
+  .drawer-item .v-list-item-title,
+  .drawer-item .v-icon {
+    color: #e9f3eb !important;
+  }
+}
+
+.profile-menu-card {
+  background: var(--layout-surface);
+  color: var(--layout-text);
+}
+
+.profile-menu-card p {
+  color: var(--app-muted);
 }
 
 /* add page padding inside the wrap (after drawer/appbar offset) */
@@ -288,6 +399,10 @@ $app-title-size: 38px;
   .top-bar {
     height: 64px;
     --v-toolbar-height: 64px;
+  }
+
+  .theme-toggle-btn {
+    right: 64px;
   }
 
   .app-title {

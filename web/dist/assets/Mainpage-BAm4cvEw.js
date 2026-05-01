@@ -1,0 +1,1 @@
+import{L as t}from"./Layout-DXfEOVIR.js";import{aQ as a,o as r}from"./index-BX4X79gw.js";import"./_plugin-vue_export-helper-3u9Ynm6u.js";import"./forwardRefs-D4uG89Dr.js";import"./VDivider-CjSo7HRf.js";const u={__name:"Mainpage",setup(e){return(p,c)=>{const o=t;return r(),a(o)}}};export{u as default};

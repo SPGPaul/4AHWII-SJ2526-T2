@@ -3,18 +3,19 @@ services:
     build: ./backend
     ports:
       - "8001:8000"
+
   web:
     restart: unless-stopped
     build:
       context: ./web/
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       - NODE_ENV=development
     # - NODE_ENV=production
     depends_on:
-      - strapi
+      - backend
     # environment:
     #   DATABASE_HOST: db
     volumes:
@@ -75,10 +76,21 @@ services:
     networks:
       - strapi-strapiDB
 
+  ollama:
+    build: .
+    image: ollama-custom:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+
 volumes:
   node_modules:
   db-data:
   strapi-data:
+  ollama-data:
 
 networks:
   strapi-strapiDB: #backend network

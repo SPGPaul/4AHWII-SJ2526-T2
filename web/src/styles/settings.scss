@@ -10,8 +10,37 @@
 // );
 @use 'web/src/styles/variables.scss';
 
-.v-main{
-    background-color: white;
+html,
+body,
+#app {
+    background-color: var(--app-page-bg, #f4fbf6);
+    color: var(--app-text, #28282B);
+}
+
+.v-theme--light {
+    --app-page-bg: #f4fbf6;
+    --app-surface: #ffffff;
+    --app-surface-strong: #bcefc2;
+    --app-surface-soft: #a8e6b8;
+    --app-text: #28282B;
+    --app-muted: #66736c;
+    --app-border: rgba(40, 40, 43, 0.16);
+}
+
+.v-theme--dark {
+    --app-page-bg: #111613;
+    --app-surface: #18211d;
+    --app-surface-strong: #203029;
+    --app-surface-soft: #ffffff;
+    --app-text: #ffffff;    
+    --app-muted: #aab8b1;
+    --app-border: rgba(255, 255, 255, 0.12);
+}
+
+.v-main {
+    background-color: var(--app-page-bg, #f4fbf6);
+    color: var(--app-text, #28282B);
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 $color-pack: true !default;
