@@ -1,18 +1,16 @@
 <template>
   <div class="profile-page">
     <v-container>
-        
       <!-- HEADER -->
       <v-card class="profile-header" elevation="4">
-        
         <div class="header-left">
- <v-btn icon variant="text" class="back-btn" to="dashboard">
-      <v-icon>mdi-arrow-left</v-icon>
-    </v-btn>
+          <v-btn icon variant="text" class="back-btn" to="dashboard">
+            <v-icon>mdi-arrow-left</v-icon>
+          </v-btn>
           <v-avatar size="60" class="avatar">
             <span>{{ userInitials }}</span>
           </v-avatar>
-            
+
           <div class="account-copy">
             <h2>Mein Account</h2>
             <p>{{ userEmail }}</p>
@@ -22,8 +20,9 @@
 
         <div class="header-right">
           <v-btn variant="text">Zurück zum Dashboard</v-btn>
-          <v-btn class="user-info" rounded to="/">Logout
-              <v-icon end>mdi-logout</v-icon></v-btn>
+          <v-btn class="user-info" rounded to="/"
+            >Logout <v-icon end>mdi-logout</v-icon></v-btn
+          >
         </div>
       </v-card>
 
@@ -36,33 +35,84 @@
 
             <v-row>
               <v-col cols="6">
-                <v-text-field label="Vorname" block rounded  variant="outlined" class="text-black" />
+                <v-text-field
+                  label="Vorname"
+                  block
+                  rounded
+                  variant="outlined"
+                  class="text-black"
+                />
               </v-col>
               <v-col cols="6">
-                <v-text-field label="Nachname" block rounded variant="outlined" class="text-black" />
+                <v-text-field
+                  label="Nachname"
+                  block
+                  rounded
+                  variant="outlined"
+                  class="text-black"
+                />
               </v-col>
               <v-col cols="6">
-                <v-text-field v-model="state.name" label="Benutzername" block rounded variant="outlined" class="text-black"  model-value=' '> {{ userName }}</v-text-field>
+                <v-text-field
+                  v-model="state.name"
+                  label="Benutzername"
+                  block
+                  rounded
+                  variant="outlined"
+                  class="text-black"
+                  model-value=" "
+                >
+                  {{ userName }}</v-text-field
+                >
               </v-col>
               <v-col cols="6">
-                
-                <v-text-field label="E-Mail" v-model="state.email" block rounded variant="outlined" class="text-black" model-value=' '>   {{ userEmail }}</v-text-field>
+                <v-text-field
+                  label="E-Mail"
+                  v-model="state.email"
+                  block
+                  rounded
+                  variant="outlined"
+                  class="text-black"
+                  model-value=" "
+                >
+                  {{ userEmail }}</v-text-field
+                >
               </v-col>
-               <v-col cols="6">
-                <v-text-field label="Password" v-model="state.password"
-                  :error-messages="v$.password.$errors.map((e) => e.$message)" :type="show1 ? 'text' : 'password'"
-                  variant="outlined" class="text-black" required @blur="v$.password.$touch"
-                  @input="v$.password.$touch" :append-inner-icon="show1 ? 'mdi-eye-off' : 'mdi-eye'"
-                  @click:append-inner="show1 = !show1" rounded block />
+              <v-col cols="6">
+                <v-text-field
+                  label="Password"
+                  v-model="state.password"
+                  :error-messages="v$.password.$errors.map((e) => e.$message)"
+                  :type="show1 ? 'text' : 'password'"
+                  variant="outlined"
+                  class="text-black"
+                  required
+                  @blur="v$.password.$touch"
+                  @input="v$.password.$touch"
+                  :append-inner-icon="show1 ? 'mdi-eye-off' : 'mdi-eye'"
+                  @click:append-inner="show1 = !show1"
+                  rounded
+                  block
+                />
               </v-col>
-               <v-col cols="6">
-                <v-text-field label="Standort" block rounded variant="outlined" class="text-black" />
+              <v-col cols="6">
+                <v-text-field
+                  label="Standort"
+                  block
+                  rounded
+                  variant="outlined"
+                  class="text-black"
+                />
               </v-col>
             </v-row>
 
             <div class="actions">
-              <v-btn color="primary" rounded dense @click="loadUser()" >Profil speichern</v-btn>
-              <v-btn variant="outlined" class="bg-black" rounded dense  >Änderungen verwerfen</v-btn>
+              <v-btn color="primary" rounded dense @click="loadUser()"
+                >Profil speichern</v-btn
+              >
+              <v-btn variant="outlined" class="bg-black" rounded dense
+                >Änderungen verwerfen</v-btn
+              >
             </div>
           </v-card>
         </v-col>
@@ -81,29 +131,33 @@
           </v-card>
         </v-col>
       </v-row>
-
     </v-container>
   </div>
 </template>
 
 <script setup>
-import { reactive,ref,computed,onMounted,onBeforeUnmount, onBeforeMount } from "vue";
+import {
+  reactive,
+  ref,
+  computed,
+  onMounted,
+  onBeforeUnmount,
+  onBeforeMount,
+} from "vue";
 import { useVuelidate } from "@vuelidate/core";
 import { email, required } from "@vuelidate/validators";
 import { loadUserData } from "@/utils/loadUser";
-import { STRAPI_URL } from "@/utils/strapi";
 
 const password = String;
 const drawer = ref(true);
 const isMobile = ref(false);
 
 const initialState = {
-      name: "",
+  name: "",
   email: "",
-  password: "", 
-  location:""
+  password: "",
+  location: "",
 };
-
 
 const state = reactive({
   ...initialState,
@@ -113,11 +167,9 @@ const rules = {
   name: { required },
   email: { required, email },
   password: { required, password },
-
 };
 
 const v$ = useVuelidate(rules, state);
-
 
 function clear() {
   v$.value.$reset();
@@ -127,65 +179,45 @@ function clear() {
   }
 }
 
-// Alle verwendeten Methoden
-async function fetchData() {
-  const apiUrl = `${STRAPI_URL}/api/Rechnungs-Radar-Users`;
-  const token = localStorage.getItem("token");
-  const res = await fetch(apiUrl, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
-  console.log("Fetch response:", res);
-  if (!res.ok) throw new Error("HTTP " + res.status + " " + res.statusText);
-  return await res.json();
-}
-
 const userName = ref("user");
 const userInitials = ref("u");
 const userEmail = ref("user@mail.com");
-//const userPassword = ref("")
 
 async function loadUser() {
-    const user = await loadUserData();
-    userName.value = user?.username || "user";
-    userInitials.value = userName.value[0];
-    userEmail.value = user?.email || "user@mail.com";
-    
-};
-onBeforeMount(() => { 
-  loadUser(userName); 
-  loadUserData();
+  const user = await loadUserData();
+  userName.value = user?.username || "user";
+  userInitials.value = userName.value[0] || "U";
+  userEmail.value = user?.email || "user@mail.com";
+}
+
+onBeforeMount(() => {
+  loadUser();
 });
+
 onMounted(() => {
   updateIsMobile();
   window.addEventListener("resize", updateIsMobile);
-
-
 });
+
 const updateIsMobile = () => {
   isMobile.value = window.matchMedia("(max-width: 700px)").matches;
   if (isMobile.value) drawer.value = false;
 };
+
 onBeforeUnmount(() => {
   window.removeEventListener("resize", updateIsMobile);
 });
 
-const show1 = ref(false)
-const show2 = ref(true)
-
-
+const show1 = ref(false);
+const show2 = ref(true);
 </script>
 
 <style lang="scss" scoped>
-
 /* proportions and colors */
 $sidebar-bg: #a8e6b8;
 $topbar-bg: #bcefc2;
-$text-primary:	#28282B;
-$border-dark: #28282B;
+$text-primary: #28282b;
+$border-dark: #28282b;
 $farbe: #f6fbf9;
 
 $topbar-height: 120px;
@@ -320,4 +352,4 @@ $app-title-size: 38px;
 .account-copy {
   color: var(--app-text);
 }
-</style>  
+</style>

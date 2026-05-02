@@ -5,39 +5,80 @@
       <v-container class="my-5">
         <v-row>
           <v-col>
-            <v-card elevation="12" width="350" class="align-center justify-center bg-white login-card" color="#bcefc2"
-              min-height="250" rounded>
-              <v-card-title class="d-flex align-center justify-center login-title">
+            <v-card
+              elevation="12"
+              width="350"
+              class="align-center justify-center bg-white login-card"
+              color="#bcefc2"
+              min-height="250"
+              rounded
+            >
+              <v-card-title
+                class="d-flex align-center justify-center login-title"
+              >
                 <span class="pr-20">Rechnungsradar</span>
 
-                <v-img src="@/assets/RechnungsradarLogo.png" max-width="50" contain class="ml-3"></v-img>
-
+                <v-img
+                  src="@/assets/RechnungsradarLogo.png"
+                  max-width="50"
+                  contain
+                  class="ml-3"
+                ></v-img>
               </v-card-title>
-              <v-divider class="my-1 "></v-divider>
-
+              <v-divider class="my-1"></v-divider>
 
               <v-card-item class="align-center justify-center">
-                <v-text-field class="login-field mb-1 my-2" variant="outlined" v-model="state.email"
-                  :error-messages="v$.email.$errors.map((e) => e.$message)" label="E-Mail" required
-                  @blur="v$.email.$touch" @input="v$.email.$touch" pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$"
-                  width="250"></v-text-field>
+                <v-text-field
+                  class="login-field mb-1 my-2"
+                  variant="outlined"
+                  v-model="state.email"
+                  :error-messages="v$.email.$errors.map((e) => e.$message)"
+                  label="E-Mail"
+                  required
+                  @blur="v$.email.$touch"
+                  @input="v$.email.$touch"
+                  pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$"
+                  width="250"
+                ></v-text-field>
               </v-card-item>
               <v-card-item class="align-center justify-center my-0">
-                <v-text-field label="Password" v-model="state.password"
-                  :error-messages="v$.password.$errors.map((e) => e.$message)" :type="show1 ? 'text' : 'password'"
-                  variant="outlined" class="login-field mb-1 my-2" required @blur="v$.password.$touch"
-                  @input="v$.password.$touch" width="250" :append-inner-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
-                  @click:append-inner="show1 = !show1" />
-
+                <v-text-field
+                  label="Password"
+                  v-model="state.password"
+                  :error-messages="v$.password.$errors.map((e) => e.$message)"
+                  :type="show1 ? 'text' : 'password'"
+                  variant="outlined"
+                  class="login-field mb-1 my-2"
+                  required
+                  @blur="v$.password.$touch"
+                  @input="v$.password.$touch"
+                  width="250"
+                  :append-inner-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
+                  @click:append-inner="show1 = !show1"
+                />
               </v-card-item>
               <v-card-item class="align-center justify-center" rounded flat>
-                <v-btn type="submit" class="justify-center login-btn mb-1" rounded block outlined width="250"
-                  color="#f2fbf6">Login </v-btn>
+                <v-btn
+                  type="submit"
+                  class="justify-center login-btn mb-1"
+                  rounded
+                  block
+                  outlined
+                  width="250"
+                  color="#f2fbf6"
+                  >Login
+                </v-btn>
               </v-card-item>
-              <v-card-item class="align-center justify-center " rounded flat>
-
-                <v-btn class="justify-center mb-1 login-link" color="white" to="Register" flat @click="Test()"> Don't have an
-                  Account? Register</v-btn>
+              <v-card-item class="align-center justify-center" rounded flat>
+                <v-btn
+                  class="justify-center mb-1 login-link"
+                  color="white"
+                  to="Register"
+                  flat
+                  @click="Test()"
+                >
+                  Don't have an Account? Register</v-btn
+                >
               </v-card-item>
             </v-card>
           </v-col>
@@ -48,19 +89,22 @@
     <!-- dekorative weiße Welle -->
     <div class="wave" aria-hidden>
       <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
-        <path d="M0,0 C300,100 900,100 1200,0 L1200,120 L0,120 Z" fill="#ffffff" opacity="0.9"></path>
+        <path
+          d="M0,0 C300,100 900,100 1200,0 L1200,120 L0,120 Z"
+          fill="#ffffff"
+          opacity="0.9"
+        ></path>
       </svg>
     </div>
   </div>
 </template>
 <script setup>
-
 import { reactive } from "vue";
 import { useVuelidate } from "@vuelidate/core";
 import { email, required } from "@vuelidate/validators";
 import { login } from "@/utils/auth";
 import { useRouter } from "vue-router";
-import { ref } from 'vue'
+import { ref } from "vue";
 
 const router = useRouter();
 const initialState = {
@@ -90,7 +134,6 @@ function clear() {
   }
 }
 
-
 async function loginUser() {
   try {
     const data = await login({
@@ -98,7 +141,6 @@ async function loginUser() {
       password: state.password,
     });
     if (data?.jwt) {
-      localStorage.setItem("token", data.jwt);
       await router.push("/dashboard");
     } else {
       console.warn("Login succeeded but no jwt:", data);
@@ -108,9 +150,8 @@ async function loginUser() {
   }
 }
 
-
-const show1 = ref(false)
-const show2 = ref(true)
+const show1 = ref(false);
+const show2 = ref(true);
 </script>
 
 <style lang="scss">
@@ -122,11 +163,13 @@ const show2 = ref(true)
   position: relative;
   overflow: hidden;
 
-  background: linear-gradient(135deg,
-      hsl(145, 60%, 94%) 0%,
-      hsl(150, 55%, 80%) 40%,
-      hsl(160, 55%, 70%) 70%,
-      hsl(170, 60%, 60%) 100%);
+  background: linear-gradient(
+    135deg,
+    hsl(145, 60%, 94%) 0%,
+    hsl(150, 55%, 80%) 40%,
+    hsl(160, 55%, 70%) 70%,
+    hsl(170, 60%, 60%) 100%
+  );
 
   background-size: 200% 200%;
   animation: gradientBreathing 25s ease-in-out infinite alternate;
@@ -211,9 +254,6 @@ const show2 = ref(true)
   transform: scale(1.1);
 }
 
-
-
-
 .v-text-field {
   width: 100%;
 }
@@ -258,11 +298,7 @@ const show2 = ref(true)
   border-radius: 14px;
   font-weight: 600;
   letter-spacing: 0.5px;
-  ;
-
-  background: linear-gradient(135deg,
-      #a8e6b8,
-      #7fd8a3);
+  background: linear-gradient(135deg, #a8e6b8, #7fd8a3);
 
   color: #f2fbf6;
   box-shadow: 0 8px 20px rgba(127, 216, 163, 0.35);
@@ -273,7 +309,6 @@ const show2 = ref(true)
 .login-btn:hover {
   border-radius: 12px;
   transform: translateY(-2px);
-
 }
 
 .v-btn:hover {
