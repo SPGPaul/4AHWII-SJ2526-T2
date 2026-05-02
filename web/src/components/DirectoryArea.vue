@@ -239,9 +239,14 @@ export default {
   },
 
   methods: {
-    /** Returns a stable string key for a receipt object. */
+    /** Returns a stable string key for a receipt object. Falls back to a timestamp-based unique key. */
     receiptKey(receipt) {
-      return receipt.documentId || String(receipt.id || receipt.transaktion || '');
+      return (
+        receipt.documentId ||
+        (receipt.id ? String(receipt.id) : null) ||
+        (receipt.transaktion ? `title-${receipt.transaktion}` : null) ||
+        `receipt-${Math.random().toString(36).slice(2)}`
+      );
     },
 
     /** Returns all receipts assigned to the given directory. */
