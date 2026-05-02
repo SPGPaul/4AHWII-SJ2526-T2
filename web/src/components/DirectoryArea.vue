@@ -239,13 +239,13 @@ export default {
   },
 
   methods: {
-    /** Returns a stable string key for a receipt object. Falls back to a timestamp-based unique key. */
+    /** Returns a stable string key for a receipt object. Falls back to a UUID for receipts missing all identifiers. */
     receiptKey(receipt) {
       return (
         receipt.documentId ||
         (receipt.id ? String(receipt.id) : null) ||
         (receipt.transaktion ? `title-${receipt.transaktion}` : null) ||
-        `receipt-${Math.random().toString(36).slice(2)}`
+        crypto.randomUUID()
       );
     },
 
