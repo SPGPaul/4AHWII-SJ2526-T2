@@ -28,13 +28,14 @@
  <v-card-item class="align-center justify-center my-0">
                 <v-text-field
                   label="Username"
-                  v-model="state.username"
-                  :error-messages="v$.password.$errors.map((e) => e.$message)"
-                  type="Username"
+                  v-model="state.name"
+                  :error-messages="v$.name.$errors.map((e) => e.$message)"
+                  type="text"
                     variant="outlined"
                     class="mb-1 text-black my-5"
                   required
-                  
+                  @blur="v$.name.$touch"
+                  @input="v$.name.$touch"
                   width="250"
                 ></v-text-field>
               </v-card-item>

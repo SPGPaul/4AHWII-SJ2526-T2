@@ -4,6 +4,9 @@ import fetch from "node-fetch";
 import rateLimit from "express-rate-limit";
 import readline from "node:readline";
 
+// Ollama host: defaults to the container name in Docker, falls back to localhost for local dev
+const OLLAMA_HOST = process.env.OLLAMA_HOST ?? "http://ollama:11434";
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
@@ -12,13 +15,16 @@ const upload = multer({
 const app = express();
 app.use(express.json());
 
+// Rate-limit all /api/ai routes to 30 requests per minute
 const limiter = rateLimit({ windowMs: 60_000, max: 30 });
 app.use("/api/ai", limiter);
 
+// Prompt for direct OCR via Ollama vision model
 const FIXED_PROMPT =
   "Extrahiere den sichtbaren Text exakt 1:1 aus dem Bild. " +
   "Nicht umschreiben, nichts ergänzen, nur den Text ausgeben.";
 
+/** Throws a structured error if the file is missing or not an image. */
 function ensureImage(file) {
   if (!file) throw { status: 400, code: "no_file" };
   if (!file.mimetype || !file.mimetype.startsWith("image/")) {
@@ -26,6 +32,7 @@ function ensureImage(file) {
   }
 }
 
+/** Builds the JSON payload for the Ollama /api/generate endpoint. */
 function makeModelPayloadFromImage(file, stream = false) {
   const b64 = file.buffer.toString("base64");
 
@@ -41,7 +48,7 @@ function makeModelPayloadFromImage(file, stream = false) {
   };
 }
 
-// Nicht-Streaming
+// Non-streaming OCR endpoint: returns the full model response at once
 app.post("/api/ai-upload", upload.single("file"), async (req, res) => {
   try {
     const file = req.file;
@@ -49,7 +56,7 @@ app.post("/api/ai-upload", upload.single("file"), async (req, res) => {
 
     const body = makeModelPayloadFromImage(file, false);
 
-    const resp = await fetch("http://localhost:11434/api/generate", {
+    const resp = await fetch(`${OLLAMA_HOST}/api/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -84,7 +91,7 @@ app.post("/api/ai-upload", upload.single("file"), async (req, res) => {
   }
 });
 
-// Streaming
+// Streaming OCR endpoint: streams model tokens as Server-Sent Events
 app.post("/api/ai/stream-upload", upload.single("file"), async (req, res) => {
   let keepAlive;
 
@@ -97,6 +104,7 @@ app.post("/api/ai/stream-upload", upload.single("file"), async (req, res) => {
     res.setHeader("Connection", "keep-alive");
     res.flushHeaders?.();
 
+    // Keep-alive ping every 15s to prevent proxy timeouts
     keepAlive = setInterval(() => {
       try {
         res.write(":\n\n");
@@ -105,7 +113,7 @@ app.post("/api/ai/stream-upload", upload.single("file"), async (req, res) => {
 
     const body = makeModelPayloadFromImage(file, true);
 
-    const resp = await fetch("http://localhost:11434/api/generate", {
+    const resp = await fetch(`${OLLAMA_HOST}/api/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
