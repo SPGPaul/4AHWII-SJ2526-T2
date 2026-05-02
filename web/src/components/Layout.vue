@@ -122,20 +122,20 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import { useTheme } from "vuetify";
+import { useRouter } from "vue-router";
 import { loadUserData } from "@/utils/loadUser";
+import { clearAuthToken } from "@/utils/http";
 
 const THEME_STORAGE_KEY = "rechnungsradar-theme";
 
+const router = useRouter();
 const drawer = ref(true);
 const theme = useTheme();
 
-const isDark = computed(() => theme.global.current.value.dark);
+const isDarkMode = computed(() => theme.global.name.value === "dark");
 
 const isMobile = ref(false);
 const drawerWidth = computed(() => (isMobile.value ? 280 : 120));
-
-const theme = useTheme();
-const isDarkMode = computed(() => theme.global.name.value === "dark");
 
 const userName = ref("user");
 const userInitials = ref("u");
@@ -147,25 +147,24 @@ function setTheme(name: "light" | "dark") {
 }
 
 function toggleTheme() {
-  setTheme(isDarkMode.value ? "light" : "dark");
+  const nextTheme = isDarkMode.value ? "light" : "dark";
+  setTheme(nextTheme);
 }
 
 async function loadUser() {
+  try {
     const user = await loadUserData();
     userName.value = user?.username || "user";
-    userInitials.value = userName.value[0];
+    userInitials.value = userName.value[0] || "U";
     userEmail.value = user?.email || "user@mail.com";
+  } catch (err) {
+    console.error("Failed to load user:", err);
+  }
 }
 
-function logout(){
-  localStorage.removeItem("token");
-  window.location.href = "/";
-}
-
-function toggleTheme() {
-  const nextTheme = theme.global.current.value.dark ? "light" : "dark";
-  theme.global.name.value = nextTheme;
-  localStorage.setItem("theme-preference", nextTheme);
+function logout() {
+  clearAuthToken();
+  router.push("/");
 }
 
 const updateIsMobile = () => {
@@ -233,7 +232,7 @@ $app-title-size: 38px;
   padding-left: 12px;
   padding-right: 12px;
   overflow: visible;
-  color: $text-primary !important;
+  color: green//$text-primary !important;
 }
 
 .app-title {

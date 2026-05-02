@@ -11,6 +11,6 @@
  * /web/ with:
  *   VITE_STRAPI_URL=https://elegant-eggs-b247740f2b.strapiapp.com
  */
-export const STRAPI_URL =
-  import.meta.env.VITE_STRAPI_URL ??
-  (import.meta.env.DEV ? "" : "https://elegant-eggs-b247740f2b.strapiapp.com");
+export const STRAPI_URL = "http://localhost:1337";
+/*import.meta.env.VITE_STRAPI_URL ??
+  (import.meta.env.DEV ? "" : "http://localhost:1337");*/

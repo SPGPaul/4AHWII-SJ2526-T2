@@ -1,6 +1,6 @@
 <template>
   <div class="page-bg">
-      <div class="bg-layer"></div>
+    <div class="bg-layer"></div>
     <form class="align-center jutifyy-center" @submit.prevent="handleSubmit">
       <v-container class="my-5">
         <v-row>
@@ -13,32 +13,29 @@
               min-height="250"
               rounded
             >
-            <v-card-title class="d-flex align-center justify-center">
-  <span class="pr-20">Rechnungsradar</span>
+              <v-card-title class="d-flex align-center justify-center">
+                <span class="pr-20">Rechnungsradar</span>
 
-  <v-img
-    src="@/assets/RechnungsradarLogo.png"
-  max-width="50"
-    contain
-    class="ml-3"
-  ></v-img>
-  
-</v-card-title>
- <v-divider class="my-1 "></v-divider>
- <v-card-item class="align-center justify-center my-0">
+                <v-img
+                  src="@/assets/RechnungsradarLogo.png"
+                  max-width="50"
+                  contain
+                  class="ml-3"
+                ></v-img>
+              </v-card-title>
+              <v-divider class="my-1"></v-divider>
+              <v-card-item class="align-center justify-center my-0">
                 <v-text-field
                   label="Username"
                   v-model="state.username"
                   :error-messages="v$.password.$errors.map((e) => e.$message)"
                   type="Username"
-                    variant="outlined"
-                    class="mb-1 text-black my-5"
+                  variant="outlined"
+                  class="mb-1 text-black my-5"
                   required
-                  
                   width="250"
                 ></v-text-field>
               </v-card-item>
- 
 
               <v-card-item class="align-center justify-center">
                 <v-text-field
@@ -60,8 +57,8 @@
                   v-model="state.password"
                   :error-messages="v$.password.$errors.map((e) => e.$message)"
                   type="password"
-                    variant="outlined"
-                    class="mb-1 text-black my-2"
+                  variant="outlined"
+                  class="mb-1 text-black my-2"
                   required
                   @blur="v$.password.$touch"
                   @input="v$.password.$touch"
@@ -69,11 +66,17 @@
                 ></v-text-field>
               </v-card-item>
               <v-card-item class="align-center justify-center" rounded flat>
-                <v-btn type="submit" class="justify-center login mb-1" rounded block outlined width="250" color="#f2fbf6"
-                  >Register </v-btn
-                >
+                <v-btn
+                  type="submit"
+                  class="justify-center login mb-1"
+                  rounded
+                  block
+                  outlined
+                  width="250"
+                  color="#f2fbf6"
+                  >Register
+                </v-btn>
               </v-card-item>
-              
             </v-card>
           </v-col>
         </v-row>
@@ -97,10 +100,8 @@
 import { reactive } from "vue";
 import useVuelidate from "@vuelidate/core";
 import { email, required, minLength } from "@vuelidate/validators";
-import { login } from "@/utils/auth";
-import { STRAPI_URL } from "@/utils/strapi";
+import { register } from "@/utils/auth";
 import { useRouter } from "vue-router";
-//import { V } from "dist/assets/VContainer-RfKRV4UQ";
 
 const router = useRouter();
 
@@ -117,7 +118,7 @@ const state = reactive({
 const rules = {
   name: { required },
   email: { required, email },
-  password: { required, minLength: minLength(6) }, // z.B. mind. 6 Zeichen
+  password: { required, minLength: minLength(6) },
 };
 
 const v$ = useVuelidate(rules, state);
@@ -125,7 +126,7 @@ const v$ = useVuelidate(rules, state);
 async function handleSubmit() {
   const isValid = await v$.value.$validate();
   if (!isValid) return;
-  await register();
+  await handleRegister();
 }
 
 function clear() {
@@ -136,37 +137,23 @@ function clear() {
   }
 }
 
-async function register() {
-  const res = await fetch(
-    `${STRAPI_URL}/api/auth/local/register`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username: state.name,
-        email: state.email,
-        password: state.password,
-      }),
-    }
-  );
-  const body = await res.json().catch(() => null);
-  if (!res.ok) throw new Error(body?.message || res.statusText);
+async function handleRegister() {
   try {
-    const data = await login({
-      identifier: state.email,
+    const data = await register({
+      username: state.name,
+      email: state.email,
       password: state.password,
     });
     if (data?.jwt) {
-      localStorage.setItem("token", data.jwt);
       await router.push("/dashboard");
     } else {
-      console.warn("Login succeeded but no jwt:", data);
+      console.warn("Registration succeeded but no jwt:", data);
     }
   } catch (err) {
-    console.error("Login failed:", err.message);
+    console.error("Registration failed:", err.message);
   }
 }
-</script> 
+</script>
 <style lang="scss">
 .page-bg {
   min-height: 100vh;
@@ -255,9 +242,6 @@ async function register() {
   }
 }
 
-
-
-
 .v-text-field {
   width: 100%;
 }
@@ -279,13 +263,7 @@ async function register() {
   border-radius: 14px;
   font-weight: 600;
   letter-spacing: 0.5px;
-  ;
-
-  background: linear-gradient(
-    135deg,
-    #a8e6b8,
-    #7fd8a3
-  );
+  background: linear-gradient(135deg, #a8e6b8, #7fd8a3);
 
   color: #f2fbf6;
   box-shadow: 0 8px 20px rgba(127, 216, 163, 0.35);
@@ -294,14 +272,11 @@ async function register() {
 }
 
 .login-btn:hover {
- border-radius: 12px;
+  border-radius: 12px;
   transform: translateY(-2px);
- 
 }
 
 .v-btn:hover {
   transform: translateY(-1px);
 }
-
 </style>
-

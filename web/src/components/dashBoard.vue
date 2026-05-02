@@ -12,14 +12,14 @@ import * as echarts from "echarts/core";
 import { onMounted, ref, onBeforeUnmount, watch } from "vue";
 import { useTheme } from "vuetify";
 import { loadUserData } from "@/utils/loadUser";
-import { STRAPI_URL } from "@/utils/strapi";
+import { apiDownloadImage } from "@/utils/api";
 
 async function parseChartData(): Promise<any[]> {
   const data = await loadUserData();
   let items = Array.isArray(data?.receipts) ? data.receipts : [];
   // Filter to unique receipts by documentId
   const seen = new Set();
-  items = items.filter(item => {
+  items = items.filter((item) => {
     if (!item.documentId) return true;
     if (seen.has(item.documentId)) return false;
     seen.add(item.documentId);
@@ -240,7 +240,8 @@ async function getBarChartData() {
   // Aggregate by category
   const agg: Record<string, number> = {};
   for (const it of filtered) {
-    const cat = it.categoryLabel ?? it.category_name ?? it.category ?? "Unbekannt";
+    const cat =
+      it.categoryLabel ?? it.category_name ?? it.category ?? "Unbekannt";
     const raw = it.amount ?? it.total ?? 0;
     const val =
       typeof raw === "number"
@@ -301,50 +302,7 @@ async function refreshStats() {
 }
 
 async function downloadImage(assetId = 1): Promise<string | null> {
-  try {
-    const base = STRAPI_URL;
-    // first fetch metadata to get the file URL
-    const metaRes = await fetch(`${base}/api/download/files/${assetId}`);
-    if (!metaRes.ok)
-      throw new Error(`HTTP ${metaRes.status} ${metaRes.statusText}`);
-    const fileMeta = await metaRes.json();
-
-    const possibleUrl =
-      fileMeta?.url ||
-      fileMeta?.data?.attributes?.url ||
-      fileMeta?.data?.attributes?.formats?.thumbnail?.url ||
-      null;
-
-    if (!possibleUrl) {
-      console.warn("No url found for asset", assetId, fileMeta);
-      return null;
-    }
-
-    // build absolute URL if needed
-    const fullUrl = possibleUrl.startsWith("http")
-      ? possibleUrl
-      : `${base.replace(/\/$/, "")}${
-          possibleUrl.startsWith("/") ? "" : "/"
-        }${possibleUrl}`;
-
-    // fetch the binary image
-    const fileRes = await fetch(fullUrl);
-    if (!fileRes.ok)
-      throw new Error(
-        `Failed to download file: HTTP ${fileRes.status} ${fileRes.statusText}`
-      );
-    const blob = await fileRes.blob();
-
-    if (!blob.type.startsWith("image/")) {
-      console.warn("Downloaded file is not an image", blob.type);
-    }
-
-    // return an object URL that can be used as src in <img>
-    return URL.createObjectURL(blob);
-  } catch (err) {
-    console.error("Failed to download image asset:", err);
-    return null;
-  }
+  return apiDownloadImage(assetId);
 }
 
 const palette = ["#ffa726", "#ffccbc", "#4dd0e1", "#aed581", "#ba68c8"];
@@ -382,7 +340,9 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener("resize", resizeHandler);
   if (barChart && typeof barChart.dispose === "function") {
-    try { barChart.dispose(); } catch (e) {}
+    try {
+      barChart.dispose();
+    } catch (e) {}
     barChart = null;
   }
 });

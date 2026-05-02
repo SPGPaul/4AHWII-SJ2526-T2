@@ -1,23 +1,33 @@
-import { STRAPI_URL } from "./strapi";
+import { apiLogin, apiRegister } from "./api";
+import { setAuthToken } from "./http";
 
+/**
+ * Login-Wrapper
+ * Speichert Token automatisch nach erfolgreichem Login
+ * @param {string} identifier - Email oder Username
+ * @param {string} password - Passwort
+ * @returns {Promise<{jwt: string, user: Object}>}
+ */
 export async function login({ identifier, password }) {
-  const res = await fetch(
-    `${STRAPI_URL}/api/auth/local`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ identifier, password }),
-    }
-  );
-
-  const body = await res.json().catch(() => null);
-  if (!res.ok) {
-    const message =
-      body?.error?.message ||
-      body?.message ||
-      body?.data?.[0]?.messages?.[0]?.message ||
-      res.statusText;
-    throw new Error(message || "Login failed");
+  const data = await apiLogin(identifier, password);
+  if (data?.jwt) {
+    setAuthToken(data.jwt);
   }
-  return body; // { jwt, user }
+  return data;
+}
+
+/**
+ * Register-Wrapper
+ * Speichert Token automatisch nach erfolgreichem Register
+ * @param {string} username - Username
+ * @param {string} email - Email
+ * @param {string} password - Passwort (mind. 6 Zeichen)
+ * @returns {Promise<{jwt: string, user: Object}>}
+ */
+export async function register({ username, email, password }) {
+  const data = await apiRegister(username, email, password);
+  if (data?.jwt) {
+    setAuthToken(data.jwt);
+  }
+  return data;
 }

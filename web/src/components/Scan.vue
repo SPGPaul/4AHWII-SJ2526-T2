@@ -33,7 +33,13 @@
           </v-btn>
         </v-col>
       </v-row>
-      <video ref="cameraVideo" class="scan-video mt-3" autoplay playsinline muted />
+      <video
+        ref="cameraVideo"
+        class="scan-video mt-3"
+        autoplay
+        playsinline
+        muted
+      />
       <canvas ref="cameraCanvas" style="display: none" />
       <v-alert
         v-if="extractedText"
@@ -329,13 +335,17 @@ import {
   PREDEFINED_CATEGORIES,
 } from "@/utils/receipt-category";
 import { preprocessCanvas, ocrSorted } from "@/utils/ocr-helpers";
-import { STRAPI_URL } from "@/utils/strapi";
+import { fetchJson } from "@/utils/http";
+import {
+  apiUploadReceipt,
+  apiSearchLocations,
+  apiExtractFieldsFromText,
+} from "@/utils/api";
 import { nextTick } from "vue";
 
 export default {
   data() {
     return {
-      apiBase: STRAPI_URL,
       selectedFile: null,
       result: null,
       loading: false,
@@ -413,7 +423,8 @@ export default {
 
     canAddProduct() {
       return (
-        this.newProduct.name && Number(this.toNumber(this.newProduct.unitprice)) > 0
+        this.newProduct.name &&
+        Number(this.toNumber(this.newProduct.unitprice)) > 0
       );
     },
 
@@ -446,7 +457,8 @@ export default {
   methods: {
     toNumber(value) {
       if (value === null || value === undefined || value === "") return null;
-      if (typeof value === "number") return Number.isFinite(value) ? value : null;
+      if (typeof value === "number")
+        return Number.isFinite(value) ? value : null;
       const normalized = String(value)
         .replace(/[^\d,.-]/g, "")
         .replace(/\.(?=.*\.)/g, "")
@@ -478,25 +490,6 @@ export default {
       });
     },
 
-    getAuthHeaders(withJson = true) {
-      const token = localStorage.getItem("token");
-      const headers = {};
-      if (withJson) headers["Content-Type"] = "application/json";
-      if (token) headers.Authorization = `Bearer ${token}`;
-      return headers;
-    },
-
-    async fetchJson(path) {
-      const response = await fetch(`${this.apiBase}${path}`, {
-        headers: this.getAuthHeaders(false),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(data?.error?.message || "Fehler beim Laden");
-      }
-      return data;
-    },
-
     syncRueckgeld() {
       const computed = Number(this.calculatedRueckgeld);
       this.formData.totals.rueckgeld = Number.isFinite(computed)
@@ -524,16 +517,8 @@ export default {
         payment_type: null,
       };
 
-      const uploadData = new FormData();
-      uploadData.append("file", this.selectedFile);
-
       try {
-        const response = await fetch("/api/receipt", {
-          method: "POST",
-          body: uploadData,
-        });
-
-        const data = await response.json();
+        const data = await apiUploadReceipt(this.selectedFile);
         console.log("✅ Backend Response:", data);
 
         this.result = data;
@@ -590,10 +575,14 @@ export default {
           const handleVideoError = (event) => {
             video.removeEventListener("loadedmetadata", handleLoadedMetadata);
             video.removeEventListener("error", handleVideoError);
-            reject(event?.error || new Error("Video konnte nicht gestartet werden"));
+            reject(
+              event?.error || new Error("Video konnte nicht gestartet werden"),
+            );
           };
 
-          video.addEventListener("loadedmetadata", handleLoadedMetadata, { once: true });
+          video.addEventListener("loadedmetadata", handleLoadedMetadata, {
+            once: true,
+          });
           video.addEventListener("error", handleVideoError, { once: true });
         });
 
@@ -648,13 +637,17 @@ export default {
       }
 
       const blob = await new Promise((resolve, reject) => {
-        canvas.toBlob((resultBlob) => {
-          if (!resultBlob) {
-            reject(new Error("Kein Bild erstellt"));
-            return;
-          }
-          resolve(resultBlob);
-        }, "image/jpeg", 0.95);
+        canvas.toBlob(
+          (resultBlob) => {
+            if (!resultBlob) {
+              reject(new Error("Kein Bild erstellt"));
+              return;
+            }
+            resolve(resultBlob);
+          },
+          "image/jpeg",
+          0.95,
+        );
       });
 
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -666,11 +659,8 @@ export default {
 
     async fetchLocations(search = "") {
       try {
-        const query = encodeURIComponent(search);
-        const data = await this.fetchJson(
-          `/api/locations?filters[city][$containsi]=${query}&populate=*`,
-        );
-        this.locations = this.normalizeEntities(data.data || [], "location");
+        const data = await apiSearchLocations(search);
+        this.locations = this.normalizeEntities(data || [], "location");
       } catch (error) {
         console.error("Locations laden fehlgeschlagen:", error);
       }
@@ -679,7 +669,7 @@ export default {
     async fetchCategories(search = "") {
       try {
         const query = encodeURIComponent(search);
-        const data = await this.fetchJson(
+        const data = await fetchJson(
           `/api/categories?filters[name][$containsi]=${query}&populate=*`,
         );
         this.categories = this.normalizeEntities(data.data || [], "category");
@@ -691,7 +681,7 @@ export default {
     async fetchPaymentTypes(search = "") {
       try {
         const query = encodeURIComponent(search);
-        const data = await this.fetchJson(
+        const data = await fetchJson(
           `/api/payment-types?filters[name][$containsi]=${query}&populate=*`,
         );
         this.paymentTypes = this.normalizeEntities(data.data || [], "payment");
@@ -701,30 +691,34 @@ export default {
     },
 
     async createEntity(path, payload) {
-      const response = await fetch(`${this.apiBase}${path}`, {
+      const response = await fetchJson(path, {
         method: "POST",
-        headers: this.getAuthHeaders(true),
         body: JSON.stringify({ data: payload }),
       });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok || !result?.data?.id) {
-        throw new Error(result?.error?.message || "Erstellen fehlgeschlagen");
+      if (!response?.data?.id) {
+        throw new Error(response?.error?.message || "Erstellen fehlgeschlagen");
       }
-      return result.data;
+      return response.data;
     },
 
     findExistingByLabel(list, value) {
-      const normalized = String(value || "").trim().toLowerCase();
-      return list.find((entry) => entry.label.toLowerCase() === normalized) || null;
+      const normalized = String(value || "")
+        .trim()
+        .toLowerCase();
+      return (
+        list.find((entry) => entry.label.toLowerCase() === normalized) || null
+      );
     },
 
     extractComboboxText(value) {
       if (value === null || value === undefined) return "";
-      if (typeof value === "string" || typeof value === "number") return String(value);
+      if (typeof value === "string" || typeof value === "number")
+        return String(value);
       if (typeof value === "object") {
         if (value.title) return String(value.title);
         if (value.label) return String(value.label);
-        if (value.value && Number.isNaN(Number(value.value))) return String(value.value);
+        if (value.value && Number.isNaN(Number(value.value)))
+          return String(value.value);
       }
       return "";
     },
@@ -780,9 +774,14 @@ export default {
     async ensureLocation(value) {
       if (typeof value === "number") return value;
       if (!value) return null;
-      if (typeof value === "string" && /^\d+$/.test(value.trim())) return Number(value);
+      if (typeof value === "string" && /^\d+$/.test(value.trim()))
+        return Number(value);
       if (typeof value === "object" && value.id) return value.id;
-      if (typeof value === "object" && value.value && !Number.isNaN(Number(value.value))) {
+      if (
+        typeof value === "object" &&
+        value.value &&
+        !Number.isNaN(Number(value.value))
+      ) {
         return Number(value.value);
       }
 
@@ -810,9 +809,14 @@ export default {
     async ensureCategory(value) {
       if (typeof value === "number") return value;
       if (!value) return null;
-      if (typeof value === "string" && /^\d+$/.test(value.trim())) return Number(value);
+      if (typeof value === "string" && /^\d+$/.test(value.trim()))
+        return Number(value);
       if (typeof value === "object" && value.id) return value.id;
-      if (typeof value === "object" && value.value && !Number.isNaN(Number(value.value))) {
+      if (
+        typeof value === "object" &&
+        value.value &&
+        !Number.isNaN(Number(value.value))
+      ) {
         return Number(value.value);
       }
 
@@ -835,9 +839,14 @@ export default {
     async ensurePaymentType(value) {
       if (typeof value === "number") return value;
       if (!value) return null;
-      if (typeof value === "string" && /^\d+$/.test(value.trim())) return Number(value);
+      if (typeof value === "string" && /^\d+$/.test(value.trim()))
+        return Number(value);
       if (typeof value === "object" && value.id) return value.id;
-      if (typeof value === "object" && value.value && !Number.isNaN(Number(value.value))) {
+      if (
+        typeof value === "object" &&
+        value.value &&
+        !Number.isNaN(Number(value.value))
+      ) {
         return Number(value.value);
       }
 
@@ -870,7 +879,10 @@ export default {
       parsedItems.forEach((item) => {
         const name = item.name || item.nm || item.price?.nm || "Unbekannt";
         const unitPriceRaw =
-          item.unitprice || item.unitPrice || item.price || item.price?.unitprice;
+          item.unitprice ||
+          item.unitPrice ||
+          item.price ||
+          item.price?.unitprice;
         const quantityRaw = item.quantity || item.cnt || 1;
 
         const unitPrice = this.toNumber(unitPriceRaw);
@@ -893,7 +905,8 @@ export default {
 
       const fallbackSum = this.calculatedItemsTotalNumber;
       this.formData.totals.summe = (summeFromOcr ?? fallbackSum).toFixed(2);
-      this.formData.totals.gezahlt = gezahltFromOcr !== null ? gezahltFromOcr.toFixed(2) : null;
+      this.formData.totals.gezahlt =
+        gezahltFromOcr !== null ? gezahltFromOcr.toFixed(2) : null;
       this.formData.totals.rueckgeld =
         rueckgeldFromOcr !== null ? rueckgeldFromOcr.toFixed(2) : null;
 
@@ -903,13 +916,17 @@ export default {
       if (this.result?.metadata) {
         if (this.result.metadata.category) {
           const cat = this.categories.find((c) =>
-            c.label.toLowerCase().includes(this.result.metadata.category.toLowerCase()),
+            c.label
+              .toLowerCase()
+              .includes(this.result.metadata.category.toLowerCase()),
           );
           if (cat) this.formData.category = cat.id;
         }
         if (this.result.metadata.location?.city) {
           const loc = this.locations.find((l) =>
-            l.label.toLowerCase().includes(this.result.metadata.location.city.toLowerCase()),
+            l.label
+              .toLowerCase()
+              .includes(this.result.metadata.location.city.toLowerCase()),
           );
           if (loc) this.formData.location = loc.id;
         }
@@ -930,7 +947,9 @@ export default {
     addProduct() {
       this.formData.items.push({
         name: String(this.newProduct.name || "").trim(),
-        unitprice: Number(this.toNumber(this.newProduct.unitprice) || 0).toFixed(2),
+        unitprice: Number(
+          this.toNumber(this.newProduct.unitprice) || 0,
+        ).toFixed(2),
         quantity: Number(this.toNumber(this.newProduct.quantity) || 1),
       });
 
@@ -944,13 +963,13 @@ export default {
     },
 
     async postReceiptPayload(payload) {
-      const response = await fetch(`${this.apiBase}/api/receipts`, {
+      return await fetchJson("/api/receipts", {
         method: "POST",
-        headers: this.getAuthHeaders(true),
         body: JSON.stringify(payload),
-      });
-      const result = await response.json().catch(() => ({}));
-      return { ok: response.ok, status: response.status, result };
+      }).then(
+        (result) => ({ ok: true, status: 200, result }),
+        (err) => ({ ok: false, status: 500, result: { error: err.message } }),
+      );
     },
 
     async saveReceipt() {
@@ -964,11 +983,17 @@ export default {
 
         const locationId = await this.ensureLocation(this.formData.location);
         const categoryId = await this.ensureCategory(this.formData.category);
-        const paymentTypeId = await this.ensurePaymentType(this.formData.payment_type);
+        const paymentTypeId = await this.ensurePaymentType(
+          this.formData.payment_type,
+        );
 
         const summe = Number(this.toNumber(this.formData.totals.summe) || 0);
-        const gezahlt = Number(this.toNumber(this.formData.totals.gezahlt) || 0);
-        const rueckgeld = Number(this.toNumber(this.formData.totals.rueckgeld) || 0);
+        const gezahlt = Number(
+          this.toNumber(this.formData.totals.gezahlt) || 0,
+        );
+        const rueckgeld = Number(
+          this.toNumber(this.formData.totals.rueckgeld) || 0,
+        );
 
         const normalizedItems = this.formData.items
           .map((item) => {
@@ -986,7 +1011,8 @@ export default {
         const nowIso = new Date().toISOString();
         const unixTime = Math.floor(Date.now() / 1000);
         const categoryLabel =
-          this.categories.find((entry) => entry.id === categoryId)?.label || "Unbekannt";
+          this.categories.find((entry) => entry.id === categoryId)?.label ||
+          "Unbekannt";
 
         const fullPayload = {
           data: {
@@ -1034,7 +1060,10 @@ export default {
         }
 
         if (submission.ok && submission.result.data?.id) {
-          this.notify(`✅ Beleg gespeichert! ID: ${submission.result.data.id}`, "success");
+          this.notify(
+            `✅ Beleg gespeichert! ID: ${submission.result.data.id}`,
+            "success",
+          );
           this.resetForm();
         } else {
           console.error("Backend Response:", submission.result);
@@ -1054,14 +1083,23 @@ export default {
     async fetchDropdownData() {
       try {
         const [locationsData, categoriesData, paymentData] = await Promise.all([
-          this.fetchJson("/api/locations?populate=*&pagination[pageSize]=100"),
-          this.fetchJson("/api/categories?populate=*&pagination[pageSize]=100"),
-          this.fetchJson("/api/payment-types?populate=*&pagination[pageSize]=100"),
+          fetchJson("/api/locations?populate=*&pagination[pageSize]=100"),
+          fetchJson("/api/categories?populate=*&pagination[pageSize]=100"),
+          fetchJson("/api/payment-types?populate=*&pagination[pageSize]=100"),
         ]);
 
-        this.locations = this.normalizeEntities(locationsData.data || [], "location");
-        this.categories = this.normalizeEntities(categoriesData.data || [], "category");
-        this.paymentTypes = this.normalizeEntities(paymentData.data || [], "payment");
+        this.locations = this.normalizeEntities(
+          locationsData.data || [],
+          "location",
+        );
+        this.categories = this.normalizeEntities(
+          categoriesData.data || [],
+          "category",
+        );
+        this.paymentTypes = this.normalizeEntities(
+          paymentData.data || [],
+          "payment",
+        );
       } catch (error) {
         console.error("Dropdown Fehler:", error);
         this.locations = [{ id: 1, label: "Wien, Österreich" }];
