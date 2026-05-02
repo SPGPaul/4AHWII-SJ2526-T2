@@ -435,16 +435,16 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-/* filepath: c:\Users\Paul Fiala\Schule\Spengergasse\SWP\4AHWII\4AHWII-SJ2526-T2\web\src\components\dashBoard.vue */
 .dashboard-root {
-  width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 32px 16px 0 16px;
+  width: auto;
+  max-width: 1100px;
+  margin: 24px auto;
+  padding: 24px 16px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  min-height: 100%;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .dashboard-title {
@@ -452,7 +452,7 @@ onBeforeUnmount(() => {
   font-weight: 700;
   color: rgb(var(--v-theme-on-surface));
   margin-bottom: 0.5em;
-  text-align: left;
+  text-align: center;
 }
 
 .dashboard-stats-row {
@@ -482,6 +482,7 @@ onBeforeUnmount(() => {
   align-items: stretch;
   grid-auto-rows: 1fr; /* make columns equal height so side panels stretch */
   width: 100%;
+  max-width: 100%;
 }
 
 .dashboard-bar {

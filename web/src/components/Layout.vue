@@ -15,11 +15,11 @@
       </v-toolbar-title>
 
       <v-btn
+        class="theme-toggle-btn"
         icon
         variant="text"
         :title="isDark ? 'Hellmodus aktivieren' : 'Dunkelmodus aktivieren'"
         @click="toggleTheme"
-        style="position: absolute; right: 72px; top: 50%; transform: translateY(-50%); z-index: 10;"
       >
         <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
       </v-btn>
@@ -134,7 +134,6 @@ const isDark = computed(() => theme.global.current.value.dark);
 const isMobile = ref(false);
 const drawerWidth = computed(() => (isMobile.value ? 280 : 120));
 
-const theme = useTheme();
 const isDarkMode = computed(() => theme.global.name.value === "dark");
 
 const userName = ref("user");
@@ -160,12 +159,6 @@ async function loadUser() {
 function logout(){
   localStorage.removeItem("token");
   window.location.href = "/";
-}
-
-function toggleTheme() {
-  const nextTheme = theme.global.current.value.dark ? "light" : "dark";
-  theme.global.name.value = nextTheme;
-  localStorage.setItem("theme-preference", nextTheme);
 }
 
 const updateIsMobile = () => {
@@ -201,7 +194,7 @@ onBeforeUnmount(() => {
 <style lang="scss" scoped>
   
 /* proportions and colors */
-$topbar-height: 120px;
+$topbar-height: 96px;
 $profile-size: 48px;
 $app-title-size: 38px;
 
@@ -233,7 +226,7 @@ $app-title-size: 38px;
   padding-left: 12px;
   padding-right: 12px;
   overflow: visible;
-  color: $text-primary !important;
+  color: var(--app-text) !important;
 }
 
 .app-title {
@@ -392,6 +385,9 @@ $app-title-size: 38px;
 .main-area :deep(.v-main__wrap) {
   padding: 24px;
   box-sizing: border-box;
+  display: flex;
+  justify-content: center; /* center page content horizontally */
+  align-items: flex-start;
 }
 
 /* Mobile: ignore any left layout offset to prevent "white strip"/overlap */
@@ -411,6 +407,9 @@ $app-title-size: 38px;
 
   .main-area :deep(.v-main__wrap) {
     padding: 12px 4vw;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
   }
 
   /* Mobile drawer: bessere Lesbarkeit, größere Touch-Ziele */
