@@ -21,7 +21,6 @@
         </div>
 
         <div class="header-right">
-          <v-btn variant="text">Zurück zum Dashboard</v-btn>
           <v-btn class="user-info" rounded to="/">Logout
               <v-icon end>mdi-logout</v-icon></v-btn>
         </div>

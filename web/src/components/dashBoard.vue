@@ -408,27 +408,30 @@ onBeforeUnmount(() => {
         <div class="dashboard-receipt-label">Belege gesamt gescannt</div>
       </div>
       <div class="dashboard-scan">
-        <button type="button" class="dashboard-scan-btn">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <path
-              d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2z"
-            ></path>
-            <circle cx="12" cy="13" r="4"></circle>
-          </svg>
-          Scan
-        </button>
+        <!-- Navigate to the scan page on click -->
+        <router-link to="/scan" custom v-slot="{ navigate }">
+          <button type="button" class="dashboard-scan-btn" @click="navigate">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2z"
+              ></path>
+              <circle cx="12" cy="13" r="4"></circle>
+            </svg>
+            Beleg scannen
+          </button>
+        </router-link>
       </div>
     </div>
   </div>

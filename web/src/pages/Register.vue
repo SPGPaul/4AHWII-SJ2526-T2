@@ -29,12 +29,13 @@
                 <v-text-field
                   label="Username"
                   v-model="state.username"
-                  :error-messages="v$.password.$errors.map((e) => e.$message)"
-                  type="Username"
+                  :error-messages="v$.username.$errors.map((e) => e.$message)"
+                  type="text"
                     variant="outlined"
                     class="mb-1 text-black my-5"
                   required
-                  
+                  @blur="v$.username.$touch"
+                  @input="v$.username.$touch"
                   width="250"
                 ></v-text-field>
               </v-card-item>
@@ -105,7 +106,7 @@ import { useRouter } from "vue-router";
 const router = useRouter();
 
 const initialState = {
-  name: "",
+  username: "",
   email: "",
   password: "",
 };
@@ -115,9 +116,9 @@ const state = reactive({
 });
 
 const rules = {
-  name: { required },
+  username: { required },
   email: { required, email },
-  password: { required, minLength: minLength(6) }, // z.B. mind. 6 Zeichen
+  password: { required, minLength: minLength(6) },
 };
 
 const v$ = useVuelidate(rules, state);
@@ -143,7 +144,7 @@ async function register() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        username: state.name,
+        username: state.username,
         email: state.email,
         password: state.password,
       }),

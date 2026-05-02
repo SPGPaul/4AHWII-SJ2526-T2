@@ -70,7 +70,10 @@ onMounted(async () => {
 
 <template>
   <Layout>
-    <v-container class="py-8 savings-page" fluid>
+    <!-- outer container: full-width so the background gradient covers the whole page -->
+    <v-container class="savings-page" fluid>
+      <!-- inner wrapper: max-width + auto margins keep content clear of the 120 px sidebar -->
+      <div class="savings-content">
       <v-row>
         <v-col cols="12">
           <v-card class="hero pa-6" elevation="8">
@@ -188,16 +191,26 @@ onMounted(async () => {
           </v-card>
         </v-col>
       </v-row>
+      </div>
     </v-container>
   </Layout>
 </template>
 
 <style scoped>
+/* Full-width container so the gradient fills the entire background */
 .savings-page {
-  padding-top: 150px;
+  min-height: 100%;
   background:
     radial-gradient(circle at 10% 10%, rgba(90, 180, 120, 0.12), transparent 35%),
     radial-gradient(circle at 90% 20%, rgba(70, 140, 255, 0.08), transparent 40%);
+}
+
+/* Inner wrapper: constrain content width and centre it so it stays clear of the sidebar */
+.savings-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 24px 40px;
+  box-sizing: border-box;
 }
 
 .hero {
@@ -220,11 +233,5 @@ onMounted(async () => {
 
 .recommendation {
   border-top: 4px solid #3b82f6;
-}
-
-@media (max-width: 700px) {
-  .savings-page {
-    padding-top: 120px;
-  }
 }
 </style>

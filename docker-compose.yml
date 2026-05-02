@@ -3,6 +3,9 @@ services:
     build: ./backend
     ports:
       - "8001:8000"
+    # OLLAMA_HOST defaults to http://ollama:11434 in main.py, no override needed
+    networks:
+      - web-strapi
 
   web:
     restart: unless-stopped
@@ -13,11 +16,12 @@ services:
       - "3001:3000"
     environment:
       - NODE_ENV=development
+      # Ollama container name so server.js can reach it
+      - OLLAMA_HOST=http://ollama:11434
     # - NODE_ENV=production
     depends_on:
       - backend
-    # environment:
-    #   DATABASE_HOST: db
+      - ollama
     volumes:
       - ./web:/app
       - node_modules:/usr/src/app/node_modules
@@ -85,6 +89,9 @@ services:
       - "11434:11434"
     volumes:
       - ollama-data:/root/.ollama
+    # Share the web-strapi network so both web and backend containers can reach it
+    networks:
+      - web-strapi
 
 volumes:
   node_modules:

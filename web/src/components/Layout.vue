@@ -93,6 +93,14 @@
             <v-list-item-title>gescannte Belege</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
+        <v-list-item to="/directories" class="drawer-item" @click="isMobile && (drawer = false)">
+          <v-list-item-icon class="drawer-item-icon">
+            <v-icon>mdi-folder-multiple-outline</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>Ordner</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
         <v-list-item to="/analysis" class="drawer-item" @click="isMobile && (drawer = false)">
           <v-list-item-icon class="drawer-item-icon">
             <v-icon>mdi-poll</v-icon>
