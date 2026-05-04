@@ -368,43 +368,46 @@ onBeforeUnmount(() => {
         <div class="dashboard-receipt-label">Belege gesamt gescannt</div>
       </div>
       <div class="dashboard-scan">
-        <button type="button" class="dashboard-scan-btn">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <path
-              d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2z"
-            ></path>
-            <circle cx="12" cy="13" r="4"></circle>
-          </svg>
-          Scan
-        </button>
+        <!-- Navigate to the scan page on click -->
+        <router-link to="/scan" custom v-slot="{ navigate }">
+          <button type="button" class="dashboard-scan-btn" @click="navigate">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2z"
+              ></path>
+              <circle cx="12" cy="13" r="4"></circle>
+            </svg>
+            Beleg scannen
+          </button>
+        </router-link>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* filepath: c:\Users\Paul Fiala\Schule\Spengergasse\SWP\4AHWII\4AHWII-SJ2526-T2\web\src\components\dashBoard.vue */
 .dashboard-root {
-  width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 32px 16px 0 16px;
+  width: auto;
+  max-width: 1100px;
+  margin: 24px auto;
+  padding: 24px 16px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  min-height: 100%;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .dashboard-title {
@@ -412,7 +415,7 @@ onBeforeUnmount(() => {
   font-weight: 700;
   color: rgb(var(--v-theme-on-surface));
   margin-bottom: 0.5em;
-  text-align: left;
+  text-align: center;
 }
 
 .dashboard-stats-row {
@@ -442,6 +445,7 @@ onBeforeUnmount(() => {
   align-items: stretch;
   grid-auto-rows: 1fr; /* make columns equal height so side panels stretch */
   width: 100%;
+  max-width: 100%;
 }
 
 .dashboard-bar {

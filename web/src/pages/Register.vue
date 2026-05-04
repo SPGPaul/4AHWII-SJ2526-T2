@@ -33,6 +33,8 @@
                   variant="outlined"
                   class="mb-1 text-black my-5"
                   required
+                  @blur="v$.username.$touch"
+                  @input="v$.username.$touch"
                   width="250"
                 ></v-text-field>
               </v-card-item>
@@ -106,7 +108,7 @@ import { useRouter } from "vue-router";
 const router = useRouter();
 
 const initialState = {
-  name: "",
+  username: "",
   email: "",
   password: "",
 };
@@ -116,7 +118,7 @@ const state = reactive({
 });
 
 const rules = {
-  name: { required },
+  username: { required },
   email: { required, email },
   password: { required, minLength: minLength(6) },
 };
