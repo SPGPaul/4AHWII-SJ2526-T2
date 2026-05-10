@@ -1,0 +1,1 @@
+import{L as t}from"./Layout-BLPfa3wj.js";import{aR as r,o as a}from"./index-COi-RtoB.js";import"./_plugin-vue_export-helper-MGotaV1y.js";import"./forwardRefs-TWhXOqIf.js";import"./VDivider-4ZrzhQhv.js";/* empty css              */const f={__name:"Mainpage",setup(p){return(e,m)=>{const o=t;return a(),r(o)}}};export{f as default};

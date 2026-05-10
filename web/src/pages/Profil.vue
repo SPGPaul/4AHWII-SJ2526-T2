@@ -35,34 +35,13 @@
             <v-row>
               <v-col cols="6">
                 <v-text-field
-                  label="Vorname"
-                  block
-                  rounded
-                  variant="outlined"
-                  class="text-black"
-                />
-              </v-col>
-              <v-col cols="6">
-                <v-text-field
-                  label="Nachname"
-                  block
-                  rounded
-                  variant="outlined"
-                  class="text-black"
-                />
-              </v-col>
-              <v-col cols="6">
-                <v-text-field
                   v-model="state.name"
                   label="Benutzername"
                   block
                   rounded
                   variant="outlined"
                   class="text-black"
-                  model-value=" "
-                >
-                  {{ userName }}</v-text-field
-                >
+                />
               </v-col>
               <v-col cols="6">
                 <v-text-field
@@ -72,10 +51,7 @@
                   rounded
                   variant="outlined"
                   class="text-black"
-                  model-value=" "
-                >
-                  {{ userEmail }}</v-text-field
-                >
+                />
               </v-col>
               <v-col cols="6">
                 <v-text-field
@@ -94,22 +70,13 @@
                   block
                 />
               </v-col>
-              <v-col cols="6">
-                <v-text-field
-                  label="Standort"
-                  block
-                  rounded
-                  variant="outlined"
-                  class="text-black"
-                />
-              </v-col>
             </v-row>
 
             <div class="actions">
               <v-btn color="primary" rounded dense @click="loadUser()"
                 >Profil speichern</v-btn
               >
-              <v-btn variant="outlined" class="bg-black" rounded dense
+              <v-btn variant="outlined" class="bg-black" rounded dense @click="clear"
                 >Änderungen verwerfen</v-btn
               >
             </div>
@@ -138,7 +105,6 @@
 import {
   reactive,
   ref,
-  computed,
   onMounted,
   onBeforeUnmount,
   onBeforeMount,
@@ -155,8 +121,11 @@ const initialState = {
   name: "",
   email: "",
   password: "",
-  location: "",
 };
+
+const savedState = reactive({
+  ...initialState,
+});
 
 const state = reactive({
   ...initialState,
@@ -165,7 +134,7 @@ const state = reactive({
 const rules = {
   name: { required },
   email: { required, email },
-  password: { required, password },
+  password: { required },
 };
 
 const v$ = useVuelidate(rules, state);
@@ -173,7 +142,7 @@ const v$ = useVuelidate(rules, state);
 function clear() {
   v$.value.$reset();
 
-  for (const [key, value] of Object.entries(initialState)) {
+  for (const [key, value] of Object.entries(savedState)) {
     state[key] = value;
   }
 }
@@ -187,6 +156,13 @@ async function loadUser() {
   userName.value = user?.username || "user";
   userInitials.value = userName.value[0] || "U";
   userEmail.value = user?.email || "user@mail.com";
+  state.name = user?.username || "";
+  state.email = user?.email || "";
+  state.password = "";
+
+  savedState.name = state.name;
+  savedState.email = state.email;
+  savedState.password = state.password;
 }
 
 onBeforeMount(() => {

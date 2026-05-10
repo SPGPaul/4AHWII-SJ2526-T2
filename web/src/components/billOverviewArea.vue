@@ -80,14 +80,14 @@
               </v-img>
             </div>
             <v-card-text class="bill-card-body">
-              <div class="trans-title">{{ item.store }}</div>
+              <div class="trans-title">{{ getReceiptTitle(item) }}</div>
               <div class="trans-meta">
-                {{ item.postcodePlace + ", " + item.streetHouseNum }}
+                {{ formatAddress(item) }}
               </div>
               <div class="trans-meta">
-                {{ formatDate(item.scanDate) }}
-                <span v-if="item.totalAmount !== null"
-                  >· {{ formatAmount(item.totalAmount) }}</span
+                {{ formatDate(item.scanDate || item.date || item.purchaseDate) }}
+                <span v-if="getAmount(item) !== null"
+                  >· {{ formatAmount(getAmount(item)) }}</span
                 >
               </div>
             </v-card-text>
@@ -282,11 +282,9 @@ export default {
       this.loading = true;
       this.error = null;
       try {
-        // Nutze loadUserData wie in Analysis_area.vue
         const { loadUserData } = await import("@/utils/loadUser");
         const data = await loadUserData();
         let items = Array.isArray(data?.receipts) ? data.receipts : [];
-        // Doppelte filtern
         const seen = new Set();
         items = items.filter((item) => {
           if (!item.documentId) return true;
@@ -302,25 +300,17 @@ export default {
         };
 
         const billPromises = items.map(async (item) => {
-          let imgSrc = this.placeholderImage;
-          const pictureId = item?.picture?.id;
+          const normalized = this.normalizeReceipt(item);
+          let imgSrc = normalized.img || this.placeholderImage;
+          const pictureId = normalized?.picture?.id || normalized?.picture?.data?.id;
           if (pictureId) {
             const json = await fetchFile(pictureId);
-            imgSrc = `${STRAPI_URL}${json.url}`;
+            imgSrc = json?.url ? `${STRAPI_URL}${json.url}` : imgSrc;
           }
 
           return {
             img: imgSrc,
-            purchaseDate: item.purchaseDate,
-            scanDate: item.scanDate,
-            store: item.store,
-            categoryLabel: item.categoryLabel,
-            items: item.items,
-            postcodePlace: item.postcodePlace,
-            streetHouseNum: item.streetHouseNum,
-            totalAmount: this.toNumber(item.totalAmount),
-            paidAmount: this.toNumber(item.paidAmount),
-            changeAmount: this.toNumber(item.changeAmount),
+            ...normalized,
           };
         });
 
@@ -335,6 +325,181 @@ export default {
       this.selected = item;
       this.dialog = true;
     },
+    normalizeReceipt(item) {
+      const source = this.unwrapReceipt(item);
+      const amount = this.pickFirstAmount(source, [
+        "totalAmount",
+        "amount",
+        "summe",
+        "total",
+        ["totals", "summe"],
+        ["totals", "gezahlt"],
+        ["totals", "rueckgeld"],
+        "paidAmount",
+        "changeAmount",
+        "gezahlt",
+        "rueckgeld",
+      ]);
+      const title = this.pickFirstText(source, [
+        "store",
+        "title",
+        "transaktion",
+        "merchant",
+        "name",
+        "business",
+        "vendor",
+        "receiptName",
+        "shop",
+        "categoryLabel",
+        "category_name",
+        "ocrText",
+        "itemsText",
+        "items_text",
+        ["attributes", "store"],
+        ["attributes", "title"],
+        ["attributes", "transaktion"],
+        ["attributes", "ocrText"],
+        ["attributes", "itemsText"],
+      ]);
+      const fallbackTitle = this.firstNonEmptyLine(source?.ocrText || source?.itemsText || source?.items || source?.items_text);
+      const postcodePlace = this.pickFirstText(source, [
+        "postcodePlace",
+        "postcode",
+        "postalPlace",
+        ["attributes", "postcodePlace"],
+      ]);
+      const streetHouseNum = this.pickFirstText(source, [
+        "streetHouseNum",
+        "street",
+        "houseNumber",
+        ["attributes", "streetHouseNum"],
+      ]);
+
+      return {
+        id: source?.id || null,
+        documentId: source?.documentId || null,
+        img:
+          source?.img ||
+          source?.picture?.url ||
+          source?.picture?.data?.attributes?.url ||
+          null,
+        title: title || fallbackTitle || null,
+        transaktion: title || fallbackTitle || null,
+        store: title || fallbackTitle || null,
+        categoryLabel: this.pickFirstText(source, [
+          "categoryLabel",
+          "category_name",
+          "category",
+          ["attributes", "categoryLabel"],
+          ["attributes", "category_name"],
+          ["attributes", "category"],
+        ]) || "Sonstiges",
+        items: source?.items || source?.itemsText || source?.items_text || null,
+        postcodePlace: postcodePlace || null,
+        streetHouseNum: streetHouseNum || null,
+        purchaseDate: source?.purchaseDate || source?.purchase_date || null,
+        scanDate: source?.scanDate || source?.date || source?.createdAt || null,
+        totalAmount: amount,
+        amount,
+        paidAmount: this.pickFirstAmount(source, ["paidAmount", "gezahlt", ["totals", "gezahlt"]]),
+        changeAmount: this.pickFirstAmount(source, ["changeAmount", "rueckgeld", ["totals", "rueckgeld"]]),
+        picture: source?.picture || null,
+        date: source?.date || source?.scanDate || source?.createdAt || null,
+      };
+    },
+    unwrapReceipt(item) {
+      return item?.attributes ? { ...item.attributes, id: item.id, documentId: item.documentId } : item?.data?.attributes ? { ...item.data.attributes, id: item.data.id, documentId: item.data.documentId } : item;
+    },
+    pickFirstText(source, paths) {
+      for (const path of paths) {
+        const value = Array.isArray(path)
+          ? path.reduce((current, key) => (current && typeof current === "object" ? current[key] : undefined), source)
+          : source?.[path];
+        if (typeof value === "string" && value.trim()) return value.trim();
+      }
+      const recursiveText = this.findRecursiveValue(
+        source,
+        (key, value) => {
+          if (typeof value !== "string") return false;
+          if (!value.trim()) return false;
+          if (/^(id|documentId|url|createdAt|updatedAt)$/i.test(key)) return false;
+          return /store|title|transaktion|merchant|name|business|vendor|shop|location|adresse|address/i.test(key) || value.trim().length > 2;
+        },
+      );
+      if (typeof recursiveText === "string" && recursiveText.trim()) {
+        return recursiveText.trim();
+      }
+      return "";
+    },
+    pickFirstAmount(source, paths) {
+      for (const path of paths) {
+        const value = Array.isArray(path)
+          ? path.reduce((current, key) => (current && typeof current === "object" ? current[key] : undefined), source)
+          : source?.[path];
+        const amount = this.toNumber(value);
+        if (amount !== null) return amount;
+      }
+      const recursiveAmount = this.findRecursiveValue(
+        source,
+        (key, value) => {
+          if (!/amount|summe|total|price|value|gezahlt|rueckgeld|balance/i.test(key)) {
+            return false;
+          }
+          return this.toNumber(value) !== null;
+        },
+      );
+      const parsedAmount = this.toNumber(recursiveAmount);
+      if (parsedAmount !== null) {
+        return parsedAmount;
+      }
+      return null;
+    },
+    findRecursiveValue(source, predicate, visited = new Set()) {
+      if (!source || typeof source !== "object" || visited.has(source)) return null;
+      visited.add(source);
+
+      for (const [key, value] of Object.entries(source)) {
+        if (predicate(key, value)) {
+          return value;
+        }
+        if (value && typeof value === "object") {
+          const nested = this.findRecursiveValue(value, predicate, visited);
+          if (nested !== null && nested !== undefined) {
+            return nested;
+          }
+        }
+      }
+
+      return null;
+    },
+    firstNonEmptyLine(value) {
+      if (typeof value !== "string") return "";
+      return value
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .find((line) => line.length > 0)
+        || "";
+    },
+    getReceiptTitle(item) {
+      return (
+        item?.store ||
+        item?.title ||
+        item?.transaktion ||
+        item?.merchant ||
+        item?.receiptName ||
+        item?.categoryLabel ||
+        this.firstNonEmptyLine(item?.itemsText || item?.items || item?.ocrText || item?.items_text) ||
+        "Unbekannter Beleg"
+      );
+    },
+    formatAddress(item) {
+      const parts = [item?.postcodePlace, item?.streetHouseNum].filter(Boolean);
+      if (parts.length > 0) return parts.join(", ");
+      return item?.store || item?.title || item?.transaktion || "Kein Standort";
+    },
+    getAmount(item) {
+      return item?.amount ?? item?.totalAmount ?? item?.summe ?? item?.total ?? item?.paidAmount ?? null;
+    },
     toNumber(value) {
       const parsed = Number(String(value ?? "").replace(",", "."));
       return Number.isFinite(parsed) ? parsed : null;
@@ -348,11 +513,11 @@ export default {
 
 <style scoped>
 .bill-overview {
-  max-width: 1100px;
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 12px 8px 28px;
   box-sizing: border-box;
-  background: rgb(var(--v-theme-surface));
+  background: transparent;
   color: rgb(var(--v-theme-on-surface));
 }
 .header-row {
@@ -360,24 +525,26 @@ export default {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 20px;
-  padding-bottom: 12px;
-  border-bottom: 4px solid #bcefc2; /* matches topbar accent */
+  margin-bottom: 18px;
+  padding: 24px 24px 22px;
+  border-radius: 28px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.84), rgba(237, 248, 240, 0.96));
+  border: 1px solid rgba(96, 143, 108, 0.12);
 }
 .header-row h1 {
   margin: 0;
   color: rgb(var(--v-theme-on-surface));
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: clamp(1.7rem, 3vw, 2.6rem);
+  font-weight: 800;
 }
 .search-field {
   width: 100%;
 }
 .cards-wrap {
-  padding: 8px 2px;
+  padding: 4px 2px 0;
 }
 .bill-card {
-  border-radius: 10px;
+  border-radius: 24px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -389,7 +556,7 @@ export default {
 }
 .bill-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 6px 20px rgba(11, 43, 24, 0.12);
+  box-shadow: 0 16px 34px rgba(11, 43, 24, 0.12);
 }
 .bill-card {
   cursor: pointer;
@@ -430,14 +597,14 @@ export default {
 }
 .dialog-body {
   padding: 16px;
-  background: linear-gradient(180deg, #f7fff8 0%, #eef8f0 100%);
+  background: linear-gradient(180deg, rgba(247,255,248,0.96) 0%, rgba(238,248,240,0.98) 100%);
 }
 .dialog-image-shell {
   min-height: 72vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 18px;
+  border-radius: 26px;
   overflow: hidden;
   background: linear-gradient(135deg, #f5fff8 0%, #e2f1e6 100%);
   border: 1px solid rgba(67, 124, 76, 0.12);
@@ -449,7 +616,7 @@ export default {
   height: 72vh;
 }
 .bill-card-body {
-  padding: 14px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -480,12 +647,12 @@ export default {
 
 @media (max-width: 700px) {
   .bill-overview {
-    padding: 12px;
+    padding: 6px 0 0;
   }
   .header-row {
     flex-direction: column;
     align-items: stretch;
-    border-bottom: 3px solid #e9fff0;
+    padding: 18px;
   }
   .search-field {
     width: 100%;

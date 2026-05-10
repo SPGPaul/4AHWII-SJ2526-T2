@@ -26,18 +26,9 @@ function getInitialTheme() {
     : "light";
 }
 
-// https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
-const savedTheme =
-  typeof window !== "undefined"
-    ? localStorage.getItem("theme-preference")
-    : null;
-const defaultTheme =
-  savedTheme === "dark" ? "dark" : savedTheme === "light" ? "light" : "light";
-
 export default createVuetify({
   theme: {
     defaultTheme: getInitialTheme(),
-    defaultTheme,
     themes: {
       light: {
         dark: false,

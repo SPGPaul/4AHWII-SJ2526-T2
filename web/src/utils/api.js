@@ -275,7 +275,7 @@ export async function apiGetAllUsers() {
  * @param {Object} me - User-Objekt (optional)
  * @returns {Promise<Array>} Normalisierte Receipt-Liste
  */
-async function fetchReceiptsFallback(token, me = null) {
+export async function fetchReceiptsFallback(token, me = null) {
   const headers = { Authorization: `Bearer ${token}` };
   const userId = me?.id ?? me?.data?.id ?? null;
 
@@ -339,33 +339,27 @@ async function fetchReceiptsFallback(token, me = null) {
 
 /**
  * Lade alle Receipts des Benutzers (mit User-Daten)
- * Falls nicht authentifiziert, Demo-Daten zurückgeben
+ * Holt die Daten direkt aus dem Backend.
  * @returns {Promise<Array>}
  */
 export async function apiGetReceipts() {
   const token = localStorage.getItem("token");
 
-  // Demo-Daten wenn nicht eingeloggt
   if (!token) {
-    return enrichReceiptsWithCategories(buildDemoReceipts());
+    return [];
   }
 
   try {
     const me = await apiGetCurrentUser();
-    let receipts = extractReceiptsFromMeResponse(me);
-
-    if (receipts.length === 0) {
-      receipts = await fetchReceiptsFallback(token, me);
+    const directReceipts = extractReceiptsFromMeResponse(me);
+    if (directReceipts.length > 0) {
+      return enrichReceiptsWithCategories(directReceipts);
     }
 
-    if (receipts.length === 0) {
-      receipts = buildDemoReceipts();
-    }
-
-    return enrichReceiptsWithCategories(receipts);
+    return enrichReceiptsWithCategories(await fetchReceiptsFallback(token, me));
   } catch (err) {
     console.error("Failed to load receipts:", err);
-    return enrichReceiptsWithCategories(buildDemoReceipts());
+    return [];
   }
 }
 
@@ -375,7 +369,7 @@ export async function apiGetReceipts() {
 
 /**
  * Upload Receipt-Bild zum Backend
- * @param {File} file - Die Bild-Datei
+ * @param {File} file - Die Bild-Dateis
  * @returns {Promise<Object>} Backend-Antwort mit OCR-Daten
  */
 export async function apiUploadReceipt(file, context = {}) {
@@ -741,7 +735,7 @@ export async function apiGetSavingsRecommendations(input) {
 /**
  * Normalisiere Strapi-Entity (mit nested attributes)
  */
-function normalizeStrapiEntity(entity) {
+export function normalizeStrapiEntity(entity) {
   if (!entity || typeof entity !== "object") return entity;
   const attrs = entity.attributes;
   if (attrs && typeof attrs === "object") {
@@ -757,11 +751,16 @@ function normalizeStrapiEntity(entity) {
 /**
  * Extrahiere Receipts aus User-Me-Response
  */
-function extractReceiptsFromMeResponse(body) {
+export function extractReceiptsFromMeResponse(body) {
   const direct = body?.receipts;
   if (Array.isArray(direct)) return direct.map(normalizeStrapiEntity);
   if (Array.isArray(direct?.data))
     return direct.data.map(normalizeStrapiEntity);
+
+  const attributes = body?.attributes?.receipts;
+  if (Array.isArray(attributes)) return attributes.map(normalizeStrapiEntity);
+  if (Array.isArray(attributes?.data))
+    return attributes.data.map(normalizeStrapiEntity);
 
   const nested = body?.data?.receipts;
   if (Array.isArray(nested)) return nested.map(normalizeStrapiEntity);
@@ -784,77 +783,3 @@ function extractCollectionItems(body) {
   return [];
 }
 
-/**
- * Demo-Receipts für nicht-authentifizierte Benutzer
- */
-function buildDemoReceipts() {
-  const now = Date.now();
-  const demoRows = [
-    { daysAgo: 1, amount: 19.8, category: "Gastronomie", title: "Lunch Bowl" },
-    {
-      daysAgo: 2,
-      amount: 64.35,
-      category: "Supermarkt",
-      title: "Wocheneinkauf",
-    },
-    { daysAgo: 3, amount: 12.4, category: "Mobilität", title: "U-Bahn Ticket" },
-    { daysAgo: 4, amount: 33.9, category: "Freizeit", title: "Kinoabend" },
-    { daysAgo: 5, amount: 89.99, category: "Shopping", title: "Kopfhörer" },
-    { daysAgo: 7, amount: 27.6, category: "Gastronomie", title: "Pizza" },
-    {
-      daysAgo: 9,
-      amount: 45.2,
-      category: "Supermarkt",
-      title: "Billa Einkauf",
-    },
-    { daysAgo: 12, amount: 16.75, category: "Gesundheit", title: "Apotheke" },
-    { daysAgo: 14, amount: 58.0, category: "Mobilität", title: "Tankstelle" },
-    { daysAgo: 18, amount: 24.5, category: "Bildung", title: "Schulmaterial" },
-    { daysAgo: 21, amount: 74.2, category: "Wohnen", title: "Haushalt" },
-    {
-      daysAgo: 24,
-      amount: 13.9,
-      category: "Gastronomie",
-      title: "Kaffee & Snack",
-    },
-    {
-      daysAgo: 27,
-      amount: 41.8,
-      category: "Supermarkt",
-      title: "Hofer Einkauf",
-    },
-    { daysAgo: 32, amount: 59.9, category: "Freizeit", title: "Fitness Abo" },
-    { daysAgo: 36, amount: 22.4, category: "Mobilität", title: "Parkhaus" },
-    { daysAgo: 41, amount: 101.5, category: "Wohnen", title: "Baumarkt" },
-    { daysAgo: 47, amount: 18.6, category: "Gastronomie", title: "Burger" },
-    { daysAgo: 53, amount: 49.7, category: "Shopping", title: "Kleidung" },
-    { daysAgo: 58, amount: 29.3, category: "Bildung", title: "Fachbuch" },
-    {
-      daysAgo: 64,
-      amount: 67.45,
-      category: "Supermarkt",
-      title: "Monatseinkauf",
-    },
-  ];
-
-  return demoRows.map((row, index) => {
-    const ts = now - row.daysAgo * 24 * 60 * 60 * 1000;
-    const iso = new Date(ts).toISOString();
-    const id = index + 1;
-    return {
-      id,
-      documentId: `demo-${id}`,
-      transaktion: row.title,
-      title: row.title,
-      amount: row.amount,
-      total: row.amount,
-      summe: row.amount,
-      category_name: row.category,
-      categoryLabel: row.category,
-      date: iso,
-      createdAt: iso,
-      unix_time: Math.floor(ts / 1000),
-      img: "/vite.svg",
-    };
-  });
-}

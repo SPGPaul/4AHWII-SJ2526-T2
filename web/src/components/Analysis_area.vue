@@ -580,8 +580,50 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div ref="nativeChartDiv" style="width: 100%; margin-top: 16px">
-    Loading charts…
+  <div class="analysis-page">
+    <section class="analysis-hero">
+      <div class="analysis-hero__copy">
+        <span class="analysis-kicker">Ausgabenanalyse</span>
+        <h1>Transaktionen schneller lesen und Muster klarer sehen.</h1>
+        <p>
+          Zwei Kerncharts und ein Monatsvergleich zeigen, wie sich Ausgaben entwickeln und wo Kategorien dominieren.
+        </p>
+      </div>
+
+      <div class="analysis-hero__stats" aria-label="Analyse-Highlights">
+        <article class="analysis-stat-card">
+          <span>Charts</span>
+          <strong>2</strong>
+          <p>Kategorie und Betrag im Direktvergleich</p>
+        </article>
+        <article class="analysis-stat-card">
+          <span>Trend</span>
+          <strong>3 Monate</strong>
+          <p>Monatliche Entwicklung je Kategorie</p>
+        </article>
+        <article class="analysis-stat-card">
+          <span>Fokus</span>
+          <strong>7 Belege</strong>
+          <p>Die letzten Einträge kompakt aufbereitet</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="analysis-surface">
+      <div class="analysis-surface__header">
+        <div>
+          <p class="analysis-surface__eyebrow">Visuelle Übersicht</p>
+          <h2>Ausgaben, Kategorien und Verlauf</h2>
+        </div>
+        <p class="analysis-surface__copy">
+          Die Karte unten bündelt die bestehenden Diagramme in einer ruhigeren, klareren Oberfläche.
+        </p>
+      </div>
+
+      <div ref="nativeChartDiv" class="analysis-mount">
+        Loading charts…
+      </div>
+    </section>
   </div>
 </template>
 
@@ -758,6 +800,337 @@ onMounted(async () => {
 
 /* very small screens */
 @media (max-width: 560px) {
+  :deep(.analysis-chart) {
+    height: 240px;
+  }
+
+  :deep(.chart-wrapper) {
+    height: 190px;
+  }
+}
+
+:deep(.analysis-page) {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 28px 20px 36px;
+  box-sizing: border-box;
+  display: grid;
+  gap: 20px;
+}
+
+:deep(.analysis-hero) {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.9fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+:deep(.analysis-hero__copy),
+:deep(.analysis-hero__stats),
+:deep(.analysis-surface) {
+  border-radius: 28px;
+  border: 1px solid rgba(96, 143, 108, 0.12);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(237, 248, 240, 0.9));
+  box-shadow: 0 18px 50px rgba(24, 47, 32, 0.08);
+  backdrop-filter: blur(14px);
+}
+
+:deep(.analysis-hero__copy) {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+:deep(.analysis-kicker),
+:deep(.analysis-surface__eyebrow) {
+  display: inline-flex;
+  width: fit-content;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(76, 146, 94, 0.12);
+  color: #2f7444;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+:deep(.analysis-hero__copy h1) {
+  margin: 16px 0 12px;
+  font-size: clamp(2rem, 3.8vw, 3.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+}
+
+:deep(.analysis-hero__copy p),
+:deep(.analysis-surface__copy) {
+  margin: 0;
+  color: var(--app-muted);
+  line-height: 1.65;
+  font-size: 1rem;
+}
+
+:deep(.analysis-hero__stats) {
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+:deep(.analysis-stat-card) {
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(96, 143, 108, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 148px;
+}
+
+:deep(.analysis-stat-card span) {
+  color: var(--app-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+:deep(.analysis-stat-card strong) {
+  font-size: 1.6rem;
+  line-height: 1.1;
+}
+
+:deep(.analysis-stat-card p) {
+  margin: 0;
+  color: var(--app-muted);
+  line-height: 1.5;
+}
+
+:deep(.analysis-surface) {
+  padding: 22px;
+}
+
+:deep(.analysis-surface__header) {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+:deep(.analysis-surface__header h2) {
+  margin: 10px 0 0;
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+}
+
+:deep(.analysis-surface__copy) {
+  max-width: 48ch;
+  text-align: right;
+}
+
+:deep(.analysis-mount) {
+  width: 100%;
+  margin-top: 8px;
+  min-height: 720px;
+}
+
+:deep(.analysis-container) {
+  color: #222;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  background: transparent;
+}
+
+:deep(.carousel-row) {
+  display: grid;
+  grid-template-columns: 56px minmax(200px, 280px) 1fr 56px;
+  grid-template-areas: "prev label chart next";
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 14px 0 0;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+:deep(.trend-btn) {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(241, 248, 243, 0.96));
+  border: 1px solid rgba(96, 143, 108, 0.14);
+  padding: 10px 14px;
+  border-radius: 14px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  transition: background 0.12s, transform 0.08s, box-shadow 0.12s;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+:deep(.trend-btn:hover) {
+  background: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(24, 47, 32, 0.08);
+}
+
+:deep(.trend-label) {
+  min-width: 0;
+  max-width: 100%;
+  text-align: center;
+  font-weight: 700;
+  color: #1f2b24;
+  word-break: break-word;
+  font-size: 14px;
+}
+
+:deep(.chart-wrapper) {
+  width: 100%;
+  max-width: 1200px;
+  height: min(56vh, 520px);
+  box-sizing: border-box;
+  border: 1px solid rgba(96, 143, 108, 0.12);
+  border-radius: 22px;
+  padding: 10px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(245, 251, 246, 0.96));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 10px 24px rgba(24, 47, 32, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+:deep(.chart-wrapper > div) {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+:deep(.dots) {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  width: 100%;
+}
+
+:deep(.dot) {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #bbb;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  opacity: 0.75;
+  transition: transform 0.12s, opacity 0.12s, background 0.12s;
+}
+
+:deep(.dot.active) {
+  background: #4e79a7;
+  opacity: 1;
+  transform: scale(1.25);
+}
+
+:deep(.analysis-toprow) {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+  padding: 10px 0 18px 0;
+  box-sizing: border-box;
+  align-items: stretch;
+  justify-content: center;
+}
+
+:deep(.analysis-chart) {
+  flex: 1 1 48%;
+  max-width: 48%;
+  min-width: 280px;
+  height: min(48vh, 440px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 900px) {
+  :deep(.analysis-hero) {
+    grid-template-columns: 1fr;
+  }
+
+  :deep(.analysis-hero__stats) {
+    grid-template-columns: 1fr;
+  }
+
+  :deep(.analysis-surface__header) {
+    grid-template-columns: 1fr;
+    display: grid;
+    align-items: start;
+  }
+
+  :deep(.analysis-surface__copy) {
+    text-align: left;
+  }
+
+  :deep(.analysis-toprow) {
+    flex-direction: column;
+    padding: 8px 0;
+  }
+
+  :deep(.analysis-chart) {
+    height: 280px;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 700px) {
+  :deep(.analysis-page) {
+    padding: 18px 12px 28px;
+  }
+
+  :deep(.analysis-hero__copy),
+  :deep(.analysis-surface) {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  :deep(.analysis-mount) {
+    min-height: 640px;
+  }
+
+  :deep(.carousel-row) {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "label label"
+      "chart chart"
+      "prev next";
+    padding: 10px 0;
+    gap: 10px;
+  }
+
+  :deep(.trend-label) {
+    font-size: 13px;
+  }
+
+  :deep(.chart-wrapper) {
+    height: 210px;
+    padding: 6px;
+  }
+}
+
+@media (max-width: 560px) {
+  :deep(.analysis-hero__copy h1) {
+    font-size: 1.9rem;
+  }
+
+  :deep(.analysis-mount) {
+    min-height: 600px;
+  }
+
   :deep(.analysis-chart) {
     height: 240px;
   }

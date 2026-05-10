@@ -1,5 +1,5 @@
 <template>
-  <v-app :class="{ 'theme-dark': isDark }">
+  <v-app :class="{ 'theme-dark': isDark }" class="app-shell">
     <v-main>
       <router-view />
     </v-main>
@@ -16,16 +16,15 @@ const isDark = computed(() => theme.global.current.value.dark);
 </script>
 
 <style>
+.app-shell {
+  min-height: 100vh;
+}
+
 .theme-dark {
   color-scheme: dark;
 }
 
-.theme-dark,
-.theme-dark * {
-  color: #ffffff !important;
-}
-
-.theme-dark :where(input, textarea, select, option, button) {
-  caret-color: #ffffff;
+.theme-dark .v-main {
+  color-scheme: dark;
 }
 </style>

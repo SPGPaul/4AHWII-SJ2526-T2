@@ -1,101 +1,77 @@
 <template>
   <div class="page-bg">
-    <div class="bg-layer"></div>
-    <form class="align-center jutifyy-center" @submit.prevent="handleSubmit">
-      <v-container class="my-5">
-        <v-row>
-          <v-col>
-            <v-card
-              elevation="12"
-              width="350"
-              class="align-center justify-center bg-white login-card"
-              color="#bcefc2"
-              min-height="250"
-              rounded
-            >
-              <v-card-title
-                class="d-flex align-center justify-center login-title"
-              >
-                <span class="pr-20">Rechnungsradar</span>
+    <div class="bg-orb bg-orb--one"></div>
+    <div class="bg-orb bg-orb--two"></div>
+    <form class="login-layout" @submit.prevent="handleSubmit">
+      <section class="login-hero">
+        <div class="brand-badge">Rechnungsradar</div>
+        <h1>Belege, Ausgaben und Sparpotenzial in einem Blick.</h1>
+        <p>
+          Eine ruhige, schnelle Oberfläche für Scan, Analyse und AI-basierte Spartipps.
+        </p>
 
-                <v-img
-                  src="@/assets/RechnungsradarLogo.png"
-                  max-width="50"
-                  contain
-                  class="ml-3"
-                ></v-img>
-              </v-card-title>
-              <v-divider class="my-1"></v-divider>
+        <div class="hero-metrics">
+          <div>
+            <strong>Scannen</strong>
+            <span>Belege in Sekunden erfassen</span>
+          </div>
+          <div>
+            <strong>Analysieren</strong>
+            <span>Ausgaben nach Kategorie verstehen</span>
+          </div>
+          <div>
+            <strong>Sparen</strong>
+            <span>Konkrete Tipps statt Bauchgefühl</span>
+          </div>
+        </div>
+      </section>
 
-              <v-card-item class="align-center justify-center">
-                <v-text-field
-                  class="login-field mb-1 my-2"
-                  variant="outlined"
-                  v-model="state.email"
-                  :error-messages="v$.email.$errors.map((e) => e.$message)"
-                  label="E-Mail"
-                  required
-                  @blur="v$.email.$touch"
-                  @input="v$.email.$touch"
-                  pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$"
-                  width="250"
-                ></v-text-field>
-              </v-card-item>
-              <v-card-item class="align-center justify-center my-0">
-                <v-text-field
-                  label="Password"
-                  v-model="state.password"
-                  :error-messages="v$.password.$errors.map((e) => e.$message)"
-                  :type="show1 ? 'text' : 'password'"
-                  variant="outlined"
-                  class="login-field mb-1 my-2"
-                  required
-                  @blur="v$.password.$touch"
-                  @input="v$.password.$touch"
-                  width="250"
-                  :append-inner-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
-                  @click:append-inner="show1 = !show1"
-                />
-              </v-card-item>
-              <v-card-item class="align-center justify-center" rounded flat>
-                <v-btn
-                  type="submit"
-                  class="justify-center login-btn mb-1"
-                  rounded
-                  block
-                  outlined
-                  width="250"
-                  color="#f2fbf6"
-                  >Login
-                </v-btn>
-              </v-card-item>
-              <v-card-item class="align-center justify-center" rounded flat>
-                <v-btn
-                  class="justify-center mb-1 login-link"
-                  color="white"
-                  to="Register"
-                  flat
-                  @click="Test()"
-                >
-                  Don't have an Account? Register</v-btn
-                >
-              </v-card-item>
-            </v-card>
-          </v-col>
-        </v-row>
-      </v-container>
+      <v-card class="login-card">
+        <div class="login-card__header">
+          <v-avatar size="52" color="green-darken-2" class="login-card__avatar">
+            <v-img src="@/assets/RechnungsradarLogo.png" contain />
+          </v-avatar>
+          <div>
+            <p class="login-card__eyebrow">Willkommen zurück</p>
+            <h2>Anmelden</h2>
+          </div>
+        </div>
+
+        <v-text-field
+          class="login-field"
+          variant="outlined"
+          v-model="state.email"
+          :error-messages="v$.email.$errors.map((e) => e.$message)"
+          label="E-Mail"
+          required
+          @blur="v$.email.$touch"
+          @input="v$.email.$touch"
+          pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$"
+        />
+
+        <v-text-field
+          label="Password"
+          v-model="state.password"
+          :error-messages="v$.password.$errors.map((e) => e.$message)"
+          :type="show1 ? 'text' : 'password'"
+          variant="outlined"
+          class="login-field"
+          required
+          @blur="v$.password.$touch"
+          @input="v$.password.$touch"
+          :append-inner-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
+          @click:append-inner="show1 = !show1"
+        />
+
+        <v-btn type="submit" class="login-btn" size="large" block>
+          Login
+        </v-btn>
+
+        <v-btn class="login-link" to="Register" variant="text" block>
+          Noch kein Konto? Registrieren
+        </v-btn>
+      </v-card>
     </form>
-
-    <!-- dekorative weiße Welle -->
-    <div class="wave" aria-hidden>
-      <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
-        <path
-          d="M0,0 C300,100 900,100 1200,0 L1200,120 L0,120 Z"
-          fill="#ffffff"
-          opacity="0.9"
-        ></path>
-      </svg>
-    </div>
   </div>
 </template>
 <script setup>
@@ -157,161 +133,195 @@ const show2 = ref(true);
 <style lang="scss">
 .page-bg {
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   position: relative;
   overflow: hidden;
-
-  background: linear-gradient(
-    135deg,
-    hsl(145, 60%, 94%) 0%,
-    hsl(150, 55%, 80%) 40%,
-    hsl(160, 55%, 70%) 70%,
-    hsl(170, 60%, 60%) 100%
-  );
-
-  background-size: 200% 200%;
-  animation: gradientBreathing 25s ease-in-out infinite alternate;
 }
 
-/* ===== Premium Glow Layers ===== */
-
-.page-bg::before,
-.page-bg::after,
-.page-bg .bg-layer {
+.page-bg::before {
   content: "";
   position: absolute;
-  width: 850px;
-  height: 850px;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.85;
-  z-index: 0;
-
-  animation: hueShift 25s ease-in-out infinite alternate;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.12), transparent 22%),
+    radial-gradient(circle at 80% 15%, rgba(73, 127, 92, 0.18), transparent 25%),
+    linear-gradient(145deg, rgba(18, 30, 23, 0.12), rgba(18, 30, 23, 0));
+  pointer-events: none;
 }
 
-/* obere linke Fläche */
-.page-bg::before {
-  background: hsl(155, 70%, 60%);
-  top: -250px;
-  left: -250px;
+.bg-orb {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(18px);
+  pointer-events: none;
 }
 
-/* untere rechte Fläche */
-.page-bg::after {
-  background: hsl(170, 70%, 50%);
-  bottom: -250px;
-  right: -250px;
-  animation-delay: 10s;
+.bg-orb--one {
+  width: 36vw;
+  height: 36vw;
+  left: -8vw;
+  top: -8vw;
+  background: rgba(141, 214, 162, 0.35);
 }
 
-/* mittlere Fläche */
-.page-bg .bg-layer {
-  width: 950px;
-  height: 950px;
-  background: hsl(160, 58%, 50%);
-  top: 15%;
-  left: 35%;
-  animation-delay: 18s;
+.bg-orb--two {
+  width: 32vw;
+  height: 32vw;
+  right: -6vw;
+  bottom: -10vw;
+  background: rgba(82, 140, 255, 0.18);
 }
 
-/* ===== Haupt Gradient Bewegung ===== */
-
-@keyframes gradientBreathing {
-  0% {
-    background-position: 0% 50%;
-  }
-
-  100% {
-    background-position: 100% 50%;
-  }
+.login-layout {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 460px);
+  gap: 28px;
+  align-items: center;
+  width: min(1180px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 40px 0;
 }
 
-/* ===== Sanfte HSL Rotation ===== */
-
-@keyframes hueShift {
-  0% {
-    filter: blur(80px) hue-rotate(0deg);
-  }
-
-  50% {
-    filter: blur(60px) hue-rotate(15deg);
-  }
-
-  100% {
-    filter: blur(40px) hue-rotate(-10deg);
-  }
+.login-hero {
+  padding: 24px 12px;
+  color: var(--app-text);
 }
 
-.v-field__append-inner {
-  cursor: pointer;
-  transition: transform 0.2s ease;
+.brand-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(12px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.74rem;
+  margin-bottom: 22px;
 }
 
-.v-field__append-inner:hover {
-  transform: scale(1.1);
+.login-hero h1 {
+  font-size: clamp(2.8rem, 5vw, 5rem);
+  line-height: 0.96;
+  margin: 0 0 18px;
+  max-width: 9ch;
 }
 
-.v-text-field {
-  width: 100%;
+.login-hero p {
+  margin: 0;
+  max-width: 42rem;
+  font-size: 1.1rem;
+  color: var(--app-muted);
 }
 
-.login-card,
-.login-card * {
-  color: #000000 !important;
+.hero-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 28px;
 }
 
-.login-card .v-field,
-.login-card .v-field__input,
-.login-card .v-field-label,
-.login-card .v-label,
-.login-card .v-messages,
-.login-card .v-btn,
-.login-card .v-btn__content {
-  color: #000000 !important;
+.hero-metrics > div {
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.46);
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  backdrop-filter: blur(12px);
 }
 
-.login-card .login-btn {
-  color: #000000 !important;
+.hero-metrics strong {
+  display: block;
+  font-size: 1rem;
+  margin-bottom: 6px;
 }
 
-.login-card .login-link {
-  color: #000000 !important;
+.hero-metrics span {
+  color: var(--app-muted);
+  font-size: 0.95rem;
 }
 
-.v-text-field .v-field {
-  border-radius: 14px;
-  background: #f2fbf6;
-  min-height: 60px;
-  transition: all 0.25s ease;
+.login-card {
+  padding: 28px;
+  border-radius: 28px !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(245, 252, 247, 0.88));
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 24px 70px rgba(14, 30, 21, 0.16);
 }
 
-.v-text-field .v-field:focus-within {
-  background: #e8f8ef;
-  box-shadow: 0 0 0 3px rgba(168, 213, 186, 0.25);
+.login-card__header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.login-card__eyebrow {
+  margin: 0 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #5b8f67;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.login-card h2 {
+  margin: 0;
+  font-size: 1.65rem;
+}
+
+.login-field {
+  margin-bottom: 12px;
 }
 
 .login-btn {
-  height: 56px;
-  border-radius: 14px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  background: linear-gradient(135deg, #a8e6b8, #7fd8a3);
-
-  color: #f2fbf6;
-  box-shadow: 0 8px 20px rgba(127, 216, 163, 0.35);
-
-  transition: all 0.25s ease;
+  margin-top: 10px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #2f7b45, #56a36b);
+  color: #fff;
+  box-shadow: 0 16px 30px rgba(47, 123, 69, 0.22);
+  text-transform: none;
+  font-weight: 700;
+  min-height: 52px;
 }
 
-.login-btn:hover {
-  border-radius: 12px;
-  transform: translateY(-2px);
+.login-link {
+  margin-top: 8px;
+  color: var(--app-muted);
+  text-transform: none;
 }
 
-.v-btn:hover {
-  transform: translateY(-1px);
+@media (max-width: 960px) {
+  .login-layout {
+    grid-template-columns: 1fr;
+    width: min(720px, calc(100% - 28px));
+    padding: 24px 0;
+  }
+
+  .login-hero {
+    order: 2;
+    padding: 12px 4px 0;
+  }
+
+  .hero-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .login-layout {
+    width: calc(100% - 20px);
+  }
+
+  .login-card {
+    padding: 20px;
+  }
+
+  .login-hero h1 {
+    font-size: 2.3rem;
+  }
 }
 </style>

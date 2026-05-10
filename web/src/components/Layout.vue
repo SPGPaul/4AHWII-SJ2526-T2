@@ -5,12 +5,13 @@
   >
     <!-- top bar -->
     <v-app-bar app class="top-bar" flat>
-      <v-btn icon @click="drawer = !drawer" class="mx-2">
+      <div class="top-bar-glow"></div>
+      <v-btn icon variant="text" @click="drawer = !drawer" class="mx-2 nav-toggle">
         <v-icon>mdi-menu</v-icon>
       </v-btn>
 
       <v-toolbar-title class="app-title">
-      
+        <span class="app-title__eyebrow">Smart receipts</span>
         Rechnungsradar
       </v-toolbar-title>
 
@@ -21,41 +22,39 @@
         :title="isDark ? 'Hellmodus aktivieren' : 'Dunkelmodus aktivieren'"
         @click="toggleTheme"
       >
+        <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
       </v-btn>
 
-       <!-- Avatar menu ersetzt den runden Button -->
-  <v-menu min-width="240" offset-y>
-    <template v-slot:activator="{ props }">
-      <v-btn
-        v-bind="props"
-        class="rounded-profile top-profile-btn"
-        elevation="2"
-        icon
-        :title="'Profil'"
-      >
-        <v-avatar color="green" size="40">
-          <span class="text-white profile">{{ userInitials }}</span>
-        </v-avatar>
-      </v-btn>
-    </template>
+      <v-menu min-width="280" offset-y>
+        <template v-slot:activator="{ props }">
+          <v-btn
+            v-bind="props"
+            class="rounded-profile top-profile-btn"
+            elevation="0"
+            icon
+            :title="'Profil'"
+          >
+            <v-avatar color="green" size="40">
+              <span class="text-white profile">{{ userInitials }}</span>
+            </v-avatar>
+          </v-btn>
+        </template>
 
-    <v-card class="profile-menu-card">
-      <v-card-text>
-        <div class="mx-auto text-center" style="width:220px">
-          <v-avatar color="green" size="56" class="mb-2">
-            <span class="text-h6 text-white">{{ userInitials }}</span>
-          </v-avatar>
-          <h3 style="margin:4px 0;">{{ userName }}</h3>
-          <p class="text-caption mt-1">{{ userEmail }}</p>
-          <v-divider class="my-3"></v-divider>
-          <v-btn to="/profil" variant="text"  color="secondary" rounded block>Account bearbeiten</v-btn>
-          <v-divider class="my-3"></v-divider>
+        <v-card class="profile-menu-card pa-4">
+          <div class="profile-card__header mb-4">
+            <v-avatar color="green" size="56" class="mb-2">
+              <span class="text-h6 text-white">{{ userInitials }}</span>
+            </v-avatar>
+            <div>
+              <h3 class="profile-card__name">{{ userName }}</h3>
+              <p class="profile-card__email">{{ userEmail }}</p>
+            </div>
+          </div>
+          <v-btn to="/profil" variant="tonal" color="secondary" rounded block class="mb-2">Account bearbeiten</v-btn>
           <v-btn variant="text" rounded block color="error" @click="logout">Abmelden</v-btn>
-        </div>
-      </v-card-text>
-    </v-card>
-  </v-menu>
-</v-app-bar>
+        </v-card>
+      </v-menu>
+    </v-app-bar>
 
     <v-navigation-drawer
       :app="!isMobile"
@@ -65,10 +64,11 @@
       :temporary="isMobile"
       :width="drawerWidth"
     >
-      <v-list dense nav class="drawer-list">
-        <br>
-        <br></br>
-        <v-list-item to="/dashboard" class="drawer-item" @click="isMobile && (drawer = false)">
+      <div class="drawer-brand">
+        <strong>Rechnungsradar</strong>
+      </div>
+      <v-list nav class="drawer-list">
+        <v-list-item to="/dashboard" class="drawer-item" active-class="drawer-item--active" @click="isMobile && (drawer = false)">
           <v-list-item-icon class="drawer-item-icon">
             <v-icon>mdi-view-dashboard</v-icon>
           </v-list-item-icon>
@@ -76,7 +76,7 @@
             <v-list-item-title>Übersicht</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <v-list-item to="/scan" class="drawer-item" @click="isMobile && (drawer = false)">
+        <v-list-item to="/scan" class="drawer-item" active-class="drawer-item--active" @click="isMobile && (drawer = false)">
           <v-list-item-icon class="drawer-item-icon">
             <v-icon>mdi-camera</v-icon>
           </v-list-item-icon>
@@ -84,7 +84,7 @@
             <v-list-item-title>Beleg scannen</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <v-list-item to="/billOverview" class="drawer-item" @click="isMobile && (drawer = false)">
+        <v-list-item to="/billOverview" class="drawer-item" active-class="drawer-item--active" @click="isMobile && (drawer = false)">
           <v-list-item-icon class="drawer-item-icon">
             <v-icon>mdi-file-document</v-icon>
           </v-list-item-icon>
@@ -92,28 +92,20 @@
             <v-list-item-title>gescannte Belege</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <v-list-item to="/directories" class="drawer-item" @click="isMobile && (drawer = false)">
-          <v-list-item-icon class="drawer-item-icon">
-            <v-icon>mdi-folder-multiple-outline</v-icon>
-          </v-list-item-icon>
-          <v-list-item-content>
-            <v-list-item-title>Ordner</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item to="/analysis" class="drawer-item" @click="isMobile && (drawer = false)">
-          <v-list-item-icon class="drawer-item-icon">
-            <v-icon>mdi-poll</v-icon>
-          </v-list-item-icon>
-          <v-list-item-content>
-            <v-list-item-title>Analysen</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item to="/savings-ai" class="drawer-item" @click="isMobile && (drawer = false)">
+        <v-list-item to="/savings-ai" class="drawer-item" active-class="drawer-item--active" @click="isMobile && (drawer = false)">
           <v-list-item-icon class="drawer-item-icon">
             <v-icon>mdi-piggy-bank-outline</v-icon>
           </v-list-item-icon>
           <v-list-item-content>
             <v-list-item-title>AI Spartipps</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item to="/analysis" class="drawer-item" active-class="drawer-item--active" @click="isMobile && (drawer = false)">
+          <v-list-item-icon class="drawer-item-icon">
+            <v-icon>mdi-poll</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>Analysen</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
         <v-spacer></v-spacer>
@@ -139,7 +131,7 @@ const router = useRouter();
 const drawer = ref(true);
 const theme = useTheme();
 
-const isDarkMode = computed(() => theme.global.name.value === "dark");
+const isDark = computed(() => theme.global.current.value.dark);
 
 const isMobile = ref(false);
 const drawerWidth = computed(() => (isMobile.value ? 280 : 120));
@@ -154,16 +146,17 @@ function setTheme(name: "light" | "dark") {
 }
 
 function toggleTheme() {
-  const nextTheme = isDarkMode.value ? "light" : "dark";
+  const nextTheme = isDark.value ? "light" : "dark";
   setTheme(nextTheme);
 }
 
 async function loadUser() {
   try {
     const user = await loadUserData();
-    userName.value = user?.username || "user";
+    const userData = user as { username?: string; email?: string } | null;
+    userName.value = userData?.username || "user";
     userInitials.value = userName.value[0] || "U";
-    userEmail.value = user?.email || "user@mail.com";
+    userEmail.value = userData?.email || "user@mail.com";
   } catch (err) {
     console.error("Failed to load user:", err);
   }
@@ -230,8 +223,8 @@ $app-title-size: 38px;
 }
 
 .top-bar {
-  background-color: var(--layout-surface-strong) !important;
-  border-bottom: 5px solid var(--layout-border);
+  background: linear-gradient(135deg, rgba(28, 44, 32, 0.92), rgba(58, 90, 68, 0.82)) !important;
+  border-bottom: 1px solid var(--layout-border);
   height: $topbar-height;
   --v-toolbar-height: #{$topbar-height};
   align-items: center;
@@ -239,20 +232,40 @@ $app-title-size: 38px;
   padding-left: 12px;
   padding-right: 12px;
   overflow: visible;
-  color: var(--app-text) !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 38px rgba(16, 30, 20, 0.18);
+  backdrop-filter: blur(18px);
+}
+
+.top-bar-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.08), transparent 30%);
+  pointer-events: none;
 }
 
 .app-title {
-  margin: 0 auto;
+  margin: 0 auto 0 12px;
   font-size: $app-title-size;
   font-weight: 700;
-  color: var(--layout-text) !important;
+  color: #ffffff !important;
   text-align: center;
   line-height: 1.2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 
   :deep(*) {
-    color: var(--layout-text) !important;
+    color: #ffffff !important;
   }
+}
+
+.app-title__eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.8;
+  margin-bottom: 2px;
 }
 
 .theme-toggle-btn {
@@ -273,14 +286,14 @@ $app-title-size: 38px;
 }
 
 .rounded-profile {
-  background: linear-gradient(var(--layout-surface), var(--layout-surface-strong));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
   border-radius: 999px;
   width: $profile-size;
   height: $profile-size;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.12);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.16);
   padding: 0;
 }
 
@@ -290,32 +303,55 @@ $app-title-size: 38px;
   color: var(--layout-surface);
 }
 
+.drawer-brand {
+  margin: 14px 16px 18px;
+  padding: 18px 16px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(92, 177, 112, 0.16), rgba(55, 92, 67, 0.08));
+  border: 1px solid var(--layout-border);
+  color: var(--layout-text);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.drawer-brand__label {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--app-muted);
+}
+
 .left-drawer {
-  background-color: var(--layout-surface) !important;
-  border-right: 2px solid var(--layout-border);
-  padding-top: 16px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.55)) !important;
+  border-right: 1px solid var(--layout-border);
+  padding-top: 12px;
   box-sizing: border-box;
   overflow: visible;
   color: var(--layout-text);
+  backdrop-filter: blur(18px);
   /* IMPORTANT: keine feste width hier erzwingen, sonst kollidiert es mit :width */
 }
 
 .drawer-list {
   width: 100%;
-  padding-left: 8px;
-  padding-right: 8px;
+  padding: 0 12px 12px;
 }
 
 /* Desktop: icon over text */
 .drawer-item {
   color: var(--layout-text) !important;
   min-height: 96px;
-  padding: 8px 6px;
+  padding: 14px 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
+  border-radius: 22px;
+  margin-bottom: 10px;
+  border: 1px solid transparent;
+  transition: transform 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
 
   .v-list-item__content {
     width: 100%;
@@ -346,6 +382,13 @@ $app-title-size: 38px;
     font-size: 28px;
     line-height: 1;
   }
+}
+
+.drawer-item:hover,
+.drawer-item--active {
+  background: linear-gradient(135deg, rgba(92, 177, 112, 0.18), rgba(65, 120, 84, 0.12));
+  border-color: rgba(92, 177, 112, 0.24);
+  transform: translateY(-1px);
 }
 
 /* IMPORTANT:
@@ -396,7 +439,7 @@ $app-title-size: 38px;
 
 /* add page padding inside the wrap (after drawer/appbar offset) */
 .main-area :deep(.v-main__wrap) {
-  padding: 24px;
+  padding: 28px;
   box-sizing: border-box;
   display: flex;
   justify-content: center; /* center page content horizontally */
@@ -416,6 +459,10 @@ $app-title-size: 38px;
 
   .app-title {
     font-size: 22px;
+  }
+
+  .app-title__eyebrow {
+    font-size: 0.65rem;
   }
 
   .main-area :deep(.v-main__wrap) {
@@ -445,6 +492,10 @@ $app-title-size: 38px;
     .v-icon {
       font-size: 24px;
     }
+  }
+
+  .drawer-brand {
+    margin: 12px 12px 14px;
   }
 }
 </style>

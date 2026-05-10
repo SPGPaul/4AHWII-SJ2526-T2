@@ -1,7 +1,7 @@
 <template>
   <div class="page-bg">
     <div class="bg-layer"></div>
-    <form class="align-center jutifyy-center" @submit.prevent="handleSubmit">
+    <form class="align-center justify-center" @submit.prevent="handleSubmit">
       <v-container class="my-5">
         <v-row>
           <v-col>
@@ -28,8 +28,8 @@
                 <v-text-field
                   label="Username"
                   v-model="state.username"
-                  :error-messages="v$.password.$errors.map((e) => e.$message)"
-                  type="Username"
+                  :error-messages="v$.username.$errors.map((e) => e.$message)"
+                  type="text"
                   variant="outlined"
                   class="mb-1 text-black my-5"
                   required
@@ -70,7 +70,7 @@
               <v-card-item class="align-center justify-center" rounded flat>
                 <v-btn
                   type="submit"
-                  class="justify-center login mb-1"
+                  class="justify-center login-btn mb-1"
                   rounded
                   block
                   outlined
@@ -142,7 +142,7 @@ function clear() {
 async function handleRegister() {
   try {
     const data = await register({
-      username: state.name,
+      username: state.username,
       email: state.email,
       password: state.password,
     });

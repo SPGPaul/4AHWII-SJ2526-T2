@@ -5,13 +5,13 @@ import AnalysisArea from '@/components/Analysis_area.vue'
 
 <template>
   <Layout>
-    <v-container fluid class="pa-0">
-      <v-row class="ma-0">
-        <v-col cols="12" class="pa-0">
-          <AnalysisArea />
-        </v-col>
-      </v-row>
-    </v-container>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <AnalysisArea />
   </Layout>
 </template>
 

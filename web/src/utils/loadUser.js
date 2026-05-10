@@ -3,11 +3,26 @@
  * Lädt den aktuellen User mit allen Daten (Receipts, etc.)
  */
 
-import { apiGetCurrentUser, apiGetReceipts } from "./api";
+import {
+  apiGetCurrentUser,
+  extractReceiptsFromMeResponse,
+  fetchReceiptsFallback,
+} from "./api";
+
+let cachedToken = null;
+let cachedUserData = null;
+let loadUserDataPromise = null;
+
+function cloneUserData(userData) {
+  return {
+    ...userData,
+    receipts: Array.isArray(userData?.receipts) ? [...userData.receipts] : [],
+  };
+}
 
 /**
  * Lade alle User-Daten inklusive Receipts
- * Falls nicht authentifiziert, Returns Demo-Daten
+ * Holt User-Daten direkt aus dem Backend.
  * @returns {Promise<Object>} User-Objekt mit receipts Array
  */
 export async function loadUserData() {
@@ -15,31 +30,61 @@ export async function loadUserData() {
     const token = localStorage.getItem("token");
 
     if (!token) {
-      // Demo-Modus
-      const receipts = await apiGetReceipts();
       return {
-        username: "Demo User",
-        email: "demo@example.com",
-        receipts,
+        username: "",
+        email: "",
+        receipts: [],
       };
     }
 
-    // Hole User-Daten und Receipts
-    const user = await apiGetCurrentUser();
-    const receipts = await apiGetReceipts();
+    if (cachedToken !== token) {
+      cachedToken = token;
+      cachedUserData = null;
+      loadUserDataPromise = null;
+    }
 
-    return {
-      ...user,
-      receipts,
-    };
+    if (cachedUserData) {
+      return cloneUserData(cachedUserData);
+    }
+
+    if (loadUserDataPromise) {
+      return cloneUserData(await loadUserDataPromise);
+    }
+
+    loadUserDataPromise = (async () => {
+      // Hole User-Daten und Receipts
+      const userResponse = await apiGetCurrentUser();
+      const user =
+        userResponse?.data && typeof userResponse.data === "object"
+          ? userResponse.data.attributes && typeof userResponse.data.attributes === "object"
+            ? {
+                id: userResponse.data.id,
+                documentId: userResponse.data.documentId,
+                ...userResponse.data.attributes,
+              }
+            : userResponse.data
+          : userResponse;
+      let receipts = extractReceiptsFromMeResponse(user);
+      if (receipts.length === 0) {
+        receipts = await fetchReceiptsFallback(token, user);
+      }
+
+      return {
+        ...user,
+        receipts,
+      };
+    })();
+
+    const loadedUserData = await loadUserDataPromise;
+    cachedUserData = loadedUserData;
+    return cloneUserData(loadedUserData);
   } catch (err) {
+    loadUserDataPromise = null;
     console.error("Failed to load user data:", err);
-    // Fallback zu Demo
-    const receipts = await apiGetReceipts();
     return {
-      username: "Demo User",
-      email: "demo@example.com",
-      receipts,
+      username: "",
+      email: "",
+      receipts: [],
     };
   }
 }
