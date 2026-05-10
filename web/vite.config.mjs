@@ -11,7 +11,7 @@ import { fileURLToPath, URL } from "node:url";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: "/4AHWII-SJ2526-T2/",
+  base: process.env.VITE_BASE_PATH ?? "/4AHWII-SJ2526-T2/",
   plugins: [
     VueRouter(),
     Vue({
@@ -65,16 +65,9 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      // Python AI backend — only the receipt-processing endpoint
-      "/api/receipt": {
-        target: "http://backend:8000",
+      "/ollama": {
+        target: "http://localhost:11434",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ""),
-      },
-      "/api/llm": {
-        target: "http://backend:8000",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ""),
       },
       // Strapi REST API (auth, users, receipts, categories, etc.)
       "/api": {

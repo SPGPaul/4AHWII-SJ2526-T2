@@ -2,7 +2,6 @@
   <div class="bill-overview">
     <div class="header-row">
       <h1>Rechnungsübersicht</h1>
-      
     </div>
 
     <v-container fluid class="cards-wrap">
@@ -48,7 +47,13 @@
           md="4"
           lg="3"
         >
-          <v-card class="bill-card" elevation="2" @click="openReceipt(item)" role="button" tabindex="0">
+          <v-card
+            class="bill-card"
+            elevation="2"
+            @click="openReceipt(item)"
+            role="button"
+            tabindex="0"
+          >
             <div class="bill-card-media">
               <v-img
                 :src="item.img || placeholderImage"
@@ -63,18 +68,27 @@
                   </div>
                 </template>
                 <div class="bill-card-overlay">
-                  <v-chip size="small" color="white" variant="elevated" class="bill-card-chip">
+                  <v-chip
+                    size="small"
+                    color="white"
+                    variant="elevated"
+                    class="bill-card-chip"
+                  >
                     {{ item.categoryLabel || "Sonstiges" }}
                   </v-chip>
                 </div>
               </v-img>
             </div>
             <v-card-text class="bill-card-body">
-              <div class="trans-title">{{ item.transaktion }}</div>
-              <div class="trans-meta">{{ item.categoryLabel || "Sonstiges" }}</div>
+              <div class="trans-title">{{ item.store }}</div>
               <div class="trans-meta">
-                {{ formatDate(item.date) }}
-                <span v-if="item.amount !== null">· {{ formatAmount(item.amount) }}</span>
+                {{ item.postcodePlace + ", " + item.streetHouseNum }}
+              </div>
+              <div class="trans-meta">
+                {{ formatDate(item.scanDate) }}
+                <span v-if="item.totalAmount !== null"
+                  >· {{ formatAmount(item.totalAmount) }}</span
+                >
               </div>
             </v-card-text>
           </v-card>
@@ -85,34 +99,34 @@
         </v-col>
       </v-row>
     </v-container>
-  
-  <v-dialog v-model="dialog" max-width="900px">
-    <v-card>
-      <v-toolbar flat>
-        <v-toolbar-title>Beleg anzeigen</v-toolbar-title>
-        <v-spacer></v-spacer>
-        <v-btn icon @click="dialog = false"><v-icon>mdi-close</v-icon></v-btn>
-      </v-toolbar>
-      <v-card-text class="dialog-body">
-        <div v-if="selected" class="dialog-image-shell">
-          <v-img
-            :src="selected.img || placeholderImage"
-            class="dialog-image"
-            height="72vh"
-            contain
-          >
-            <template #placeholder>
-              <div class="bill-card-placeholder dialog-placeholder">
-                <v-icon size="56">mdi-receipt-text-outline</v-icon>
-                <span>Beleg wird geladen</span>
-              </div>
-            </template>
-          </v-img>
-        </div>
-        <div v-else class="no-data">Kein Beleg ausgewählt.</div>
-      </v-card-text>
-    </v-card>
-  </v-dialog>
+
+    <v-dialog v-model="dialog" max-width="900px">
+      <v-card>
+        <v-toolbar flat>
+          <v-toolbar-title>Details ansehen</v-toolbar-title>
+          <v-spacer></v-spacer>
+          <v-btn icon @click="dialog = false"><v-icon>mdi-close</v-icon></v-btn>
+        </v-toolbar>
+        <v-card-text class="dialog-body">
+          <div v-if="selected" class="dialog-image-shell">
+            <v-img
+              :src="selected.img || placeholderImage"
+              class="dialog-image"
+              height="72vh"
+              contain
+            >
+              <template #placeholder>
+                <div class="bill-card-placeholder dialog-placeholder">
+                  <v-icon size="56">mdi-receipt-text-outline</v-icon>
+                  <span>Beleg wird geladen</span>
+                </div>
+              </template>
+            </v-img>
+          </div>
+          <div v-else class="no-data">Kein Beleg ausgewählt.</div>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -170,26 +184,45 @@ export default {
       const categories = this.bills
         .map((item) => item.categoryLabel || "Sonstiges")
         .filter(Boolean);
-      return [...new Set(categories)].sort((a, b) => String(a).localeCompare(String(b), "de"));
+      return [...new Set(categories)].sort((a, b) =>
+        String(a).localeCompare(String(b), "de"),
+      );
     },
     filteredRechnung() {
       const query = this.searchQuery.trim().toLowerCase();
 
       let items = [...this.bills];
       if (this.selectedCategory) {
-        items = items.filter((item) => (item.categoryLabel || "Sonstiges") === this.selectedCategory);
+        items = items.filter(
+          (item) =>
+            (item.categoryLabel || "Sonstiges") === this.selectedCategory,
+        );
       }
 
       if (query) {
         items = items.filter((item) => {
           const fields = [
-            item.transaktion,
+            item.purchaseDate ? this.formatDate(item.purchaseDate) : "",
+            item.scanDate ? this.formatDate(item.scanDate) : "",
+            item.store,
             item.categoryLabel,
-            item.documentId,
+            item.items,
+            item.postcodePlace,
+            item.streetHouseNum,
+            item.totalAmount !== null
+              ? this.formatAmount(item.totalAmount)
+              : "",
+            item.paidAmount !== null ? this.formatAmount(item.paidAmount) : "",
+            item.changeAmount !== null
+              ? this.formatAmount(item.changeAmount)
+              : "",
             item.date ? this.formatDate(item.date) : "",
-            item.amount !== null ? this.formatAmount(item.amount) : "",
           ];
-          return fields.some((field) => String(field || "").toLowerCase().includes(query));
+          return fields.some((field) =>
+            String(field || "")
+              .toLowerCase()
+              .includes(query),
+          );
         });
       }
 
@@ -210,10 +243,16 @@ export default {
             if (b.amount === null) return -1;
             return b.amount - a.amount;
           case "name-desc":
-            return String(b.transaktion || "").localeCompare(String(a.transaktion || ""), "de");
+            return String(b.transaktion || "").localeCompare(
+              String(a.transaktion || ""),
+              "de",
+            );
           case "name-asc":
           default:
-            return String(a.transaktion || "").localeCompare(String(b.transaktion || ""), "de");
+            return String(a.transaktion || "").localeCompare(
+              String(b.transaktion || ""),
+              "de",
+            );
         }
       });
 
@@ -244,37 +283,48 @@ export default {
       this.error = null;
       try {
         // Nutze loadUserData wie in Analysis_area.vue
-        const { loadUserData } = await import('@/utils/loadUser');
+        const { loadUserData } = await import("@/utils/loadUser");
         const data = await loadUserData();
         let items = Array.isArray(data?.receipts) ? data.receipts : [];
         // Doppelte filtern
         const seen = new Set();
-        items = items.filter(item => {
+        items = items.filter((item) => {
           if (!item.documentId) return true;
           if (seen.has(item.documentId)) return false;
           seen.add(item.documentId);
           return true;
         });
-        // Mapping für img
-        const baseUrl = STRAPI_URL;
-        this.bills = items.map(item => {
-          let imgSrc = '';
-          if (item.img) {
-            if (typeof item.img === 'string') {
-              imgSrc = item.img.startsWith('http') ? item.img : `${baseUrl}${item.img}`;
-            } else if (typeof item.img === 'object' && item.img.url) {
-              imgSrc = item.img.url.startsWith('http') ? item.img.url : `${baseUrl}${item.img.url}`;
-            }
+
+        const fetchFile = async (id) => {
+          const res = await fetch(`${STRAPI_URL}/api/upload/files/${id}`);
+          if (!res.ok) throw new Error("Fetch failed");
+          return res.json();
+        };
+
+        const billPromises = items.map(async (item) => {
+          let imgSrc = this.placeholderImage;
+          const pictureId = item?.picture?.id;
+          if (pictureId) {
+            const json = await fetchFile(pictureId);
+            imgSrc = `${STRAPI_URL}${json.url}`;
           }
+
           return {
-            img: imgSrc || this.placeholderImage,
-            transaktion: item.transaktion || item.title || '',
-            categoryLabel: item.categoryLabel || item.category_name || item.category || 'Sonstiges',
-            documentId: item.documentId || null,
-            date: item.date || item.createdAt || null,
-            amount: this.toNumber(item.summe ?? item.amount ?? item.total),
+            img: imgSrc,
+            purchaseDate: item.purchaseDate,
+            scanDate: item.scanDate,
+            store: item.store,
+            categoryLabel: item.categoryLabel,
+            items: item.items,
+            postcodePlace: item.postcodePlace,
+            streetHouseNum: item.streetHouseNum,
+            totalAmount: this.toNumber(item.totalAmount),
+            paidAmount: this.toNumber(item.paidAmount),
+            changeAmount: this.toNumber(item.changeAmount),
           };
         });
+
+        this.bills = await Promise.all(billPromises);
       } catch (e) {
         this.error = e.message || "Fehler beim Laden der Rechnungen.";
       } finally {
@@ -332,14 +382,18 @@ export default {
   display: flex;
   flex-direction: column;
   height: 100%;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
   box-shadow: 0 2px 8px rgba(11, 43, 24, 0.06);
 }
 .bill-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 6px 20px rgba(11, 43, 24, 0.12);
 }
-.bill-card { cursor: pointer; }
+.bill-card {
+  cursor: pointer;
+}
 .bill-card-media {
   position: relative;
   overflow: hidden;
@@ -425,7 +479,9 @@ export default {
 }
 
 @media (max-width: 700px) {
-  .bill-overview { padding: 12px; }
+  .bill-overview {
+    padding: 12px;
+  }
   .header-row {
     flex-direction: column;
     align-items: stretch;
@@ -435,7 +491,8 @@ export default {
     width: 100%;
     max-width: 100%;
   }
-  .header-row h1 { font-size: 1.4rem; }
+  .header-row h1 {
+    font-size: 1.4rem;
+  }
 }
-
 </style>

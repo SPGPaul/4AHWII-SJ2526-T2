@@ -9,6 +9,198 @@ import { fetchJson, fetchFormData, fetchBlob, setAuthToken } from "./http";
 import { enrichReceiptsWithCategories } from "./receipt-category";
 import { STRAPI_URL } from "./strapi";
 
+const OLLAMA_GENERATE_URL = "/ollama/api/generate";
+
+function toNumber(value) {
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (typeof value !== "string") return null;
+  const cleaned = value.replace(",", ".").replace(/[^0-9.]/g, "");
+  if (!cleaned) return null;
+  const parsed = Number(cleaned);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function extractOllamaText(payload) {
+  return String(
+    payload?.response ??
+      payload?.message?.content ??
+      payload?.output ??
+      payload?.result ??
+      "",
+  );
+}
+
+function parseJsonFromText(text) {
+  const match = String(text).match(/\{[\s\S]*\}$/);
+  if (!match) {
+    throw new Error("Keine JSON-Struktur im Modelloutput gefunden");
+  }
+
+  return JSON.parse(match[0]);
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      resolve(result.includes(",") ? result.split(",")[1] : result);
+    };
+
+    reader.onerror = () => {
+      reject(reader.error || new Error("Failed to read file"));
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
+async function callOllamaGenerate({
+  prompt,
+  images = [],
+  model = "minicpm-v",
+  stream = false,
+  options = {},
+}) {
+  const response = await fetch(OLLAMA_GENERATE_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      prompt,
+      images: images.length > 0 ? images : undefined,
+      stream,
+      options,
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => null);
+    console.error("ollama error", response.status, text);
+    throw new Error(`ollama ${response.status}`);
+  }
+
+  return await response.json();
+}
+
+function makeOcrPrompt() {
+  return (
+    "Extrahiere den sichtbaren Text exakt 1:1 aus dem Bild. " +
+    "Nicht umschreiben, nichts ergänzen, nur den Text ausgeben."
+  );
+}
+
+function makeParseReceiptPrompt(ocrText, context = {}) {
+  const categoriesText = Array.isArray(context.categories)
+    ? context.categories.map((entry) => `- ${entry}`).join("\n")
+    : "";
+  const paymentTypesText = Array.isArray(context.paymentTypes)
+    ? context.paymentTypes.map((entry) => `- ${entry}`).join("\n")
+    : "";
+
+  return (
+    "Du bist ein präziser Assistent zur Beleg- und Rechnungsanalyse. " +
+    "Aus dem folgenden Rohtext des Belegs extrahierst du ausschließlich ein gültiges JSON-Objekt ohne zusätzliche Erklärungen. " +
+    "Gib nur das JSON zurück. Verwende Punkt als Dezimaltrennzeichen. Wenn ein Feld nicht gefunden wird, setze es auf null oder ein leeres Array.\n\n" +
+    "Das JSON-Objekt muss genau die folgenden Felder enthalten:\n" +
+    "{\n" +
+    '  "purchaseDate": string|null,          // Datum des Kaufs, Format YYYY-MM-DD wenn möglich\n' +
+    '  "scanDate": string|null,              // Datum des Scans, falls bekannt/null sonst null\n' +
+    '  "store": string|null,                 // Name/Geschäft/Unternehmen\n' +
+    '  "postcodePlace": string|null,         // PLZ und Ort in einem Feld (z.B. "1010 Wien")\n' +
+    '  "streetHouseNum": string|null,        // Straße + Hausnummer in einem Feld\n' +
+    '  "totals": { "summe": number|null, "gezahlt": number|null, "rueckgeld": number|null },\n' +
+    '  "payment_type": string|null,          // z.B. "Barzahlung", "Kartenzahlung"\n' +
+    '  "category": string|null,              // Breitere Kategorie: z.B. "Lebensmittel & Supermarkt" oder null\n' +
+    '  "items": [ { "name": string, "quantity": number|null, "unitprice": number|null } ],\n' +
+    '  "items_text": string|null             // Vollständige Artikel-Liste als editierbarer Fließtext, eine Zeile pro Artikel\n' +
+    "}\n\n" +
+    "Die Adresse steht meistens im oberen Teil des Belegs direkt unter dem Firmennamen. " +
+    "Achte besonders dort auf Straße, Hausnummer sowie PLZ und Ort.\n\n" +
+    "KATEGORISIERUNG (wichtig!):\n" +
+    "1. Bestehe die folgenden verfügbaren Kategorien aus der Datenbank:\n" +
+    `${categoriesText || "Keine Kategorien verfügbar"}\n\n` +
+    "2. Versuche aus dem Firmennamen / Kontext eine sinnvolle Kategorie zu erkennen.\n" +
+    "3. WENN eine Kategorie aus der Liste oben semantisch passt (auch mit leicht anderem Wortlaut), verwende exakt diesen Namen aus der Liste.\n" +
+    "4. NUR wenn keine Kategorie aus der Liste passt, erfinde eine sinnvolle neue Kategorie.\n\n" +
+    "ZAHLUNGSART (wichtig!):\n" +
+    "1. Verfügbare Zahlungsarten aus der Datenbank:\n" +
+    `${paymentTypesText || "Keine Zahlungsarten verfügbar"}\n\n` +
+    "2. Erkenne die Zahlungsart vom Beleg (z.B. 'Bar', 'Cash', 'Kartenzahlung', 'Kreditkarte', 'Überweisung').\n" +
+    "3. WENN eine Zahlungsart aus der Liste oben semantisch passt (z.B. 'Bar' ≈ 'Barzahlung', 'Karte' ≈ 'Kartenzahlung'), verwende exakt diesen Namen aus der Liste.\n" +
+    "4. NUR wenn wirklich keine Zahlungsart aus der Liste passt, erfinde eine sinnvolle neue Zahlungsart.\n" +
+    "5. Priorität: Bestehende DB-Einträge vor neuen Erfindungen!\n\n" +
+    `Belegtext:\n"""${ocrText}"""`
+  );
+}
+
+function buildSavingsSnapshot(receipts) {
+  const totals = receipts.reduce(
+    (accumulator, receipt) => {
+      const amount =
+        toNumber(receipt?.amount) ??
+        toNumber(receipt?.summe) ??
+        toNumber(receipt?.total) ??
+        toNumber(receipt?.totals?.summe);
+
+      if (amount !== null) {
+        accumulator.totalSpend += amount;
+        accumulator.receiptsWithAmount += 1;
+
+        const category =
+          String(
+            receipt?.categoryLabel ||
+              receipt?.category_name ||
+              receipt?.category ||
+              "",
+          ).trim() || "Unkategorisiert";
+
+        accumulator.categories.set(
+          category,
+          (accumulator.categories.get(category) || 0) + amount,
+        );
+      }
+
+      return accumulator;
+    },
+    {
+      totalSpend: 0,
+      receiptsWithAmount: 0,
+      categories: new Map(),
+    },
+  );
+
+  return {
+    total_spend: Number(totals.totalSpend.toFixed(2)),
+    receipts_with_amount: totals.receiptsWithAmount,
+    top_categories: Array.from(totals.categories.entries())
+      .sort((left, right) => right[1] - left[1])
+      .slice(0, 5)
+      .map(([category, total]) => ({
+        category,
+        total: Number(total.toFixed(2)),
+      })),
+  };
+}
+
+function makeSavingsRecommendationsPrompt(payload, snapshot) {
+  return (
+    "Du bist ein Assistent für Haushaltsanalyse. Analysiere die folgenden Belege und gib nur ein gültiges JSON-Objekt zurück. " +
+    "Das JSON muss genau diese Form haben:\n" +
+    "{\n" +
+    '  "summary": string,\n' +
+    '  "recommendations": [ { "title": string, "reason": string, "difficulty": "easy"|"medium"|"hard", "estimated_saving_per_month": number } ],\n' +
+    '  "risk_notes": [ string ]\n' +
+    "}\n" +
+    "Keine zusätzliche Erklärung, nur das JSON. Verwende Euro-Beträge als Zahlen.\n\n" +
+    `Snapshot:\n${JSON.stringify(snapshot, null, 2)}\n\n` +
+    `Eingabedaten:\n${JSON.stringify(payload, null, 2)}`
+  );
+}
+
 /**
  * ============== AUTHENTIFICATION ==============
  */
@@ -57,7 +249,9 @@ export async function apiRegister(username, email, password) {
  * @returns {Promise<Object>} User-Object mit allen Feldern
  */
 export async function apiGetCurrentUser() {
-  const data = await fetchJson(`${STRAPI_URL}/api/users/me?populate=receipts`);
+  const data = await fetchJson(
+    `${STRAPI_URL}/api/users/me?populate[receipts][populate]=picture`,
+  );
   return data;
 }
 
@@ -86,9 +280,9 @@ async function fetchReceiptsFallback(token, me = null) {
   const userId = me?.id ?? me?.data?.id ?? null;
 
   const baseCandidates = [
-    "pagination[pageSize]=200&sort[0]=date:desc&publicationState=preview",
+    "pagination[pageSize]=200&sort[0]=scanDate:desc&publicationState=preview",
     "pagination[pageSize]=200&publicationState=preview",
-    "pagination[pageSize]=200&sort[0]=date:desc",
+    "pagination[pageSize]=200&sort[0]=scanDate:desc",
     "pagination[pageSize]=200",
     "",
   ];
@@ -184,15 +378,236 @@ export async function apiGetReceipts() {
  * @param {File} file - Die Bild-Datei
  * @returns {Promise<Object>} Backend-Antwort mit OCR-Daten
  */
-export async function apiUploadReceipt(file) {
-  const formData = new FormData();
-  formData.append("file", file);
+export async function apiUploadReceipt(file, context = {}) {
+  const isPdf =
+    file?.type === "application/pdf" ||
+    String(file?.name || "")
+      .toLowerCase()
+      .endsWith(".pdf");
 
-  // No auth needed for this endpoint
-  const data = await fetchFormData("/api/receipt", formData, {
-    includeAuth: false,
+  if (isPdf) {
+    throw new Error("PDF-Uploads werden ohne Backend nicht unterstützt.");
+  }
+
+  const ocrResponse = await callOllamaGenerate({
+    prompt: makeOcrPrompt(),
+    images: [await fileToBase64(file)],
+    stream: false,
+    options: {
+      temperature: 0,
+      num_predict: 2048,
+    },
   });
-  return data;
+
+  const ocrText = extractOllamaText(ocrResponse);
+  if (!ocrText) {
+    return {
+      data: {
+        items: [],
+        totals: { summe: null, gezahlt: null, rueckgeld: null },
+      },
+      ocrText: "",
+      raw: ocrResponse,
+      model_text: ocrText,
+    };
+  }
+
+  const parsedData = await apiParseReceiptText(ocrText, context);
+
+  return {
+    ...parsedData,
+    ocrText,
+    raw: ocrResponse,
+    model_text: ocrText,
+  };
+}
+
+export async function apiParseReceiptText(ocrText, context = {}) {
+  const response = await callOllamaGenerate({
+    prompt: makeParseReceiptPrompt(ocrText, context),
+    stream: false,
+    options: {
+      temperature: 0,
+      num_predict: 1024,
+    },
+  });
+
+  const text = extractOllamaText(response);
+  const data = parseJsonFromText(text);
+
+  return { ok: true, data, model_text: text, raw: response };
+}
+
+/**
+ * Kategorien / Zahlungsarten helper
+ */
+export async function apiGetCategories() {
+  const data = await fetchJson(
+    `${STRAPI_URL}/api/categories?pagination[pageSize]=200&populate=*`,
+  );
+  const items = extractCollectionItems(data);
+  return items.map(normalizeStrapiEntity);
+}
+
+export async function apiGetPaymentTypes() {
+  const data = await fetchJson(
+    `${STRAPI_URL}/api/payment-types?pagination[pageSize]=200&populate=*`,
+  );
+  const items = extractCollectionItems(data);
+  return items.map(normalizeStrapiEntity);
+}
+
+export async function apiCreateCategory(name) {
+  const body = { data: { name } };
+  const res = await fetchJson(`${STRAPI_URL}/api/categories`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+  return res?.data || null;
+}
+
+export async function apiCreatePaymentType(name) {
+  const body = { data: { name } };
+  const res = await fetchJson(`${STRAPI_URL}/api/payment-types`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+  return res?.data || null;
+}
+
+/**
+ * Prüft, ob eine Kategorie mit diesem Namen bereits existiert.
+ * Wenn nicht, erstellt sie. Gibt die ID zurück.
+ */
+export async function apiCheckOrCreateCategory(name) {
+  if (!name || typeof name !== "string") return null;
+  const trimmedName = String(name).trim();
+  if (!trimmedName) return null;
+
+  try {
+    const existing = await apiGetCategories();
+    const found = (existing || []).find((c) => {
+      const catName = c?.attributes?.name || c?.name || "";
+      return catName.trim().toLowerCase() === trimmedName.toLowerCase();
+    });
+    if (found) {
+      return found.id;
+    }
+    const created = await apiCreateCategory(trimmedName);
+    return created?.id || null;
+  } catch (err) {
+    console.error("apiCheckOrCreateCategory error:", err);
+    return null;
+  }
+}
+
+/**
+ * Prüft, ob eine Zahlungsart mit diesem Namen bereits existiert.
+ * Wenn nicht, erstellt sie. Gibt die ID zurück.
+ */
+export async function apiCheckOrCreatePaymentType(name) {
+  if (!name || typeof name !== "string") return null;
+  const trimmedName = String(name).trim();
+  if (!trimmedName) return null;
+
+  try {
+    const existing = await apiGetPaymentTypes();
+    const found = (existing || []).find((p) => {
+      const payName = p?.attributes?.name || p?.name || "";
+      return payName.trim().toLowerCase() === trimmedName.toLowerCase();
+    });
+    if (found) {
+      return found.id;
+    }
+    const created = await apiCreatePaymentType(trimmedName);
+    return created?.id || null;
+  } catch (err) {
+    console.error("apiCheckOrCreatePaymentType error:", err);
+    return null;
+  }
+}
+
+/**
+ * Wenn in der DB noch keine Kategorie/PaymentType vorhanden ist,
+ * frage das LLM nach sinnvollen Default-Einträgen und lege sie an.
+ */
+export async function apiEnsureDefaultCategoriesAndPaymentTypes() {
+  try {
+    const existingCats = await apiGetCategories();
+    const existingPays = await apiGetPaymentTypes();
+
+    if (
+      existingCats &&
+      existingCats.length > 0 &&
+      existingPays &&
+      existingPays.length > 0
+    ) {
+      return { categories: existingCats, paymentTypes: existingPays };
+    }
+
+    const prompt =
+      `Gib ein JSON-Objekt mit zwei Arrays zurück: {"categories": [...], "paymentTypes": [...] }.` +
+      ` Nenne typische deutsche Kategorien und Zahlungsarten, jeweils ca. 8 Einträge. Gib nur das JSON zurück.`;
+
+    const resp = await callOllamaGenerate({
+      prompt,
+      stream: false,
+      options: { temperature: 0, num_predict: 512 },
+    });
+    const text = extractOllamaText(resp);
+    let parsed = null;
+    try {
+      parsed = parseJsonFromText(text);
+    } catch (err) {
+      console.warn("LLM-Defaults konnten nicht geparst werden", err);
+      return { categories: existingCats, paymentTypes: existingPays };
+    }
+
+    const createdCats = [];
+    const createdPays = [];
+
+    if (Array.isArray(parsed.categories)) {
+      for (const name of parsed.categories) {
+        try {
+          const exists = (existingCats || []).find((c) => {
+            const n = c?.attributes?.name || c?.name || "";
+            return n.trim().toLowerCase() === String(name).trim().toLowerCase();
+          });
+          if (!exists) {
+            const created = await apiCreateCategory(String(name).trim());
+            if (created) createdCats.push(created);
+          }
+        } catch (e) {
+          console.warn("Kategorie erstellen fehlgeschlagen", name, e);
+        }
+      }
+    }
+
+    if (Array.isArray(parsed.paymentTypes)) {
+      for (const name of parsed.paymentTypes) {
+        try {
+          const exists = (existingPays || []).find((p) => {
+            const n = p?.attributes?.name || p?.name || "";
+            return n.trim().toLowerCase() === String(name).trim().toLowerCase();
+          });
+          if (!exists) {
+            const created = await apiCreatePaymentType(String(name).trim());
+            if (created) createdPays.push(created);
+          }
+        } catch (e) {
+          console.warn("PaymentType erstellen fehlgeschlagen", name, e);
+        }
+      }
+    }
+
+    // Rückgabe der aktuellen Zustände
+    const finalCats = await apiGetCategories();
+    const finalPays = await apiGetPaymentTypes();
+    return { categories: finalCats, paymentTypes: finalPays };
+  } catch (err) {
+    console.warn("apiEnsureDefaultCategoriesAndPaymentTypes failed", err);
+    return { categories: [], paymentTypes: [] };
+  }
 }
 
 /**
@@ -290,27 +705,33 @@ export async function apiSearchLocations(search = "") {
  * @param {string} ocrText - Der erkannte Text vom Receipt
  * @returns {Promise<Object>} {total, date, ...}
  */
-export async function apiExtractFieldsFromText(ocrText) {
-  const data = await fetchJson("/api/llm/extract-fields", {
-    method: "POST",
-    includeAuth: false,
-    body: JSON.stringify({ ocrText }),
-  });
-  return data?.data ?? { total: null, date: null };
-}
 
 /**
  * Hole Sparempfehlungen vom Backend
  * @param {Array<Object>} receipts - Array von Receipt-Objekten
  * @returns {Promise<Object>}
  */
-export async function apiGetSavingsRecommendations(receipts) {
-  const data = await fetchJson("/api/llm/savings-recommendations", {
-    method: "POST",
-    includeAuth: false,
-    body: JSON.stringify({ receipts }),
+export async function apiGetSavingsRecommendations(input) {
+  const payload = Array.isArray(input)
+    ? { receipts: input }
+    : input && typeof input === "object"
+      ? input
+      : { receipts: [] };
+  const receipts = Array.isArray(payload.receipts) ? payload.receipts : [];
+  const snapshot = buildSavingsSnapshot(receipts);
+
+  const response = await callOllamaGenerate({
+    prompt: makeSavingsRecommendationsPrompt(payload, snapshot),
+    stream: false,
+    options: {
+      temperature: 0.2,
+      num_predict: 1024,
+    },
   });
-  return data;
+
+  const text = extractOllamaText(response);
+  const data = parseJsonFromText(text);
+  return { snapshot, data, raw: response, model_text: text };
 }
 
 /**

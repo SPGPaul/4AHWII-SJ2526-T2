@@ -21,7 +21,6 @@
         :title="isDark ? 'Hellmodus aktivieren' : 'Dunkelmodus aktivieren'"
         @click="toggleTheme"
       >
-        <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
       </v-btn>
 
        <!-- Avatar menu ersetzt den runden Button -->
@@ -144,8 +143,6 @@ const isDarkMode = computed(() => theme.global.name.value === "dark");
 
 const isMobile = ref(false);
 const drawerWidth = computed(() => (isMobile.value ? 280 : 120));
-
-const isDarkMode = computed(() => theme.global.name.value === "dark");
 
 const userName = ref("user");
 const userInitials = ref("u");

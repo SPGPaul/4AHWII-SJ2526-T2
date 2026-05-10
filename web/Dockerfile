@@ -1,23 +1,22 @@
-# Verwende ein Node.js-Image als Basis
-FROM node:22.19.0
+FROM node:22.19.0 AS build
 
-# Setze das Arbeitsverzeichnis
 WORKDIR /app
 
-# Kopiere die package.json und package-lock.json
 COPY package*.json ./
+RUN rm -f package-lock.json && npm install
 
-# Installiere die Abhängigkeiten
-RUN npm install
-
-# Kopiere den Rest des Projekts
 COPY . .
 
-# Baue das Projekt
-#RUN npm run build
+ARG VITE_BASE_PATH=/4AHWII-SJ2526-T2/
+ENV VITE_BASE_PATH=${VITE_BASE_PATH}
 
-# Exponiere den Port
-EXPOSE 3000
+RUN npm run build
 
-# Starte die Anwendung
-CMD ["npm", "run", "dev", "--", "--host"]
+FROM nginx:1.27-alpine
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
