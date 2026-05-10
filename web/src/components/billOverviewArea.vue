@@ -74,7 +74,7 @@
                     variant="elevated"
                     class="bill-card-chip"
                   >
-                    {{ item.categoryLabel || "Sonstiges" }}
+                    {{ item.category || "Sonstiges" }}
                   </v-chip>
                 </div>
               </v-img>
@@ -201,9 +201,11 @@ export default {
 
       if (query) {
         items = items.filter((item) => {
+          console.log("Searching in item:", item);
           const fields = [
             item.purchaseDate ? this.formatDate(item.purchaseDate) : "",
             item.scanDate ? this.formatDate(item.scanDate) : "",
+            item.category,
             item.store,
             item.categoryLabel,
             item.items,
@@ -286,6 +288,7 @@ export default {
         const { loadUserData } = await import("@/utils/loadUser");
         const data = await loadUserData();
         let items = Array.isArray(data?.receipts) ? data.receipts : [];
+        console.log("ii", items);
         // Doppelte filtern
         const seen = new Set();
         items = items.filter((item) => {
@@ -302,19 +305,20 @@ export default {
         };
 
         const billPromises = items.map(async (item) => {
+          console.log("Processing item:", item);
           let imgSrc = this.placeholderImage;
           const pictureId = item?.picture?.id;
           if (pictureId) {
             const json = await fetchFile(pictureId);
             imgSrc = `${STRAPI_URL}${json.url}`;
           }
-
           return {
             img: imgSrc,
             purchaseDate: item.purchaseDate,
             scanDate: item.scanDate,
             store: item.store,
             categoryLabel: item.categoryLabel,
+            category: item.category.name,
             items: item.items,
             postcodePlace: item.postcodePlace,
             streetHouseNum: item.streetHouseNum,

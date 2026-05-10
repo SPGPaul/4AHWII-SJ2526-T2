@@ -14,32 +14,32 @@ export async function loadUserData() {
   try {
     const token = localStorage.getItem("token");
 
-    if (!token) {
-      // Demo-Modus
-      const receipts = await apiGetReceipts();
-      return {
-        username: "Demo User",
-        email: "demo@example.com",
-        receipts,
-      };
-    }
+    // if (!token) {
+    //   // Demo-Modus
+    //   const receipts = await apiGetReceipts();
+    //   return {
+    //     username: "Demo User",
+    //     email: "demo@example.com",
+    //     receipts,
+    //   };
+    // }
 
     // Hole User-Daten und Receipts
     const user = await apiGetCurrentUser();
-    const receipts = await apiGetReceipts();
+    // const receipts = await apiGetReceipts();
 
     return {
       ...user,
-      receipts,
+      // receipts,
     };
   } catch (err) {
     console.error("Failed to load user data:", err);
     // Fallback zu Demo
-    const receipts = await apiGetReceipts();
-    return {
-      username: "Demo User",
-      email: "demo@example.com",
-      receipts,
-    };
+    // const receipts = await apiGetReceipts();
+    // return {
+    //   username: "Demo User",
+    //   email: "demo@example.com",
+    //   receipts,
+    // };
   }
 }

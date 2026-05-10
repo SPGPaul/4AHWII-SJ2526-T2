@@ -250,7 +250,7 @@ export async function apiRegister(username, email, password) {
  */
 export async function apiGetCurrentUser() {
   const data = await fetchJson(
-    `${STRAPI_URL}/api/users/me?populate[receipts][populate]=picture`,
+    `${STRAPI_URL}/api/users/me?populate[receipts][populate]=picture&populate[receipts][populate]=category`,
   );
   return data;
 }
